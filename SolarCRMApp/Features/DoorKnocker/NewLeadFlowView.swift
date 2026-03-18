@@ -3,25 +3,34 @@ import SwiftUI
 
 struct NewLeadFlowView: View {
     @EnvironmentObject private var appState: AppState
-    @Environment(\.dismiss) private var dismiss
 
     @State private var draft = LeadFormDraft()
     @State private var extraction: LeadExtraction?
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImageName = ""
-    @State private var path: IntakePath?
+    @State private var showReviewScreen = false
     @State private var isExtracting = false
     @State private var extractionError: String?
 
-    enum IntakePath: Hashable {
-        case manual
-        case reviewExtracted
+    private var assignedCloserName: String? {
+        guard let assignedCloserID = appState.currentUser?.assignedCloserID else { return nil }
+        return appState.userName(for: assignedCloserID)
     }
 
     var body: some View {
         List {
             Section("Create Lead") {
-                NavigationLink(value: IntakePath.manual) {
+                NavigationLink {
+                    LeadFormView(
+                        title: "Manual Lead Entry",
+                        draft: $draft,
+                        source: draft.leadSource,
+                        showReviewContext: false,
+                        assignedCloserName: assignedCloserName
+                    ) {
+                        await appState.saveNewLead(from: draft)
+                    }
+                } label: {
                     Label("Manual Entry", systemImage: "square.and.pencil")
                 }
 
@@ -47,23 +56,12 @@ struct NewLeadFlowView: View {
             }
         }
         .navigationTitle("New Lead")
-        .navigationDestination(item: $path) { path in
-            switch path {
-            case .manual:
-                LeadFormView(
-                    title: "Manual Lead Entry",
-                    draft: $draft,
-                    source: draft.leadSource,
-                    showReviewContext: false
-                ) {
-                    await appState.saveNewLead(from: draft)
-                    dismiss()
-                }
-            case .reviewExtracted:
-                LeadReviewView(extraction: extraction ?? LeadExtraction(draft: draft, fieldConfidences: [], rawText: "")) { reviewedDraft in
-                    await appState.saveNewLead(from: reviewedDraft, source: .imageIntake)
-                    dismiss()
-                }
+        .navigationDestination(isPresented: $showReviewScreen) {
+            LeadReviewView(
+                extraction: extraction ?? LeadExtraction(draft: draft, fieldConfidences: [], rawText: ""),
+                assignedCloserName: assignedCloserName
+            ) { reviewedDraft in
+                await appState.saveNewLead(from: reviewedDraft, source: .imageIntake)
             }
         }
         .task(id: selectedItem) {
@@ -82,18 +80,9 @@ struct NewLeadFlowView: View {
             let extracted = try await appState.extractLead(from: selectedImageName)
             extraction = extracted
             draft = extracted.draft
-            path = .reviewExtracted
+            showReviewScreen = true
         } catch {
             extractionError = "AI extraction could not parse that image. Continue with manual entry instead."
-        }
-    }
-}
-
-extension NewLeadFlowView.IntakePath: Identifiable {
-    var id: String {
-        switch self {
-        case .manual: return "manual"
-        case .reviewExtracted: return "reviewExtracted"
         }
     }
 }

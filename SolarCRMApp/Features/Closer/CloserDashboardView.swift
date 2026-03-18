@@ -8,7 +8,7 @@ struct CloserDashboardView: View {
     }
 
     private var pendingLeads: [Lead] {
-        myLeads.filter { !$0.currentStatus.isConfirmedForCloserSchedule }
+        myLeads.filter { $0.currentStatus.isVisibleInCloserLeads }
     }
 
     private var scheduledLeads: [Lead] {
@@ -24,7 +24,7 @@ struct CloserDashboardView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
                         HStack(spacing: 12) {
-                            MetricCard(title: "Assigned Leads", value: "\(myLeads.count)", systemImage: "tray.full")
+                            MetricCard(title: "Assigned Leads", value: "\(pendingLeads.count)", systemImage: "tray.full")
                             MetricCard(title: "On Schedule", value: "\(scheduledLeads.count)", systemImage: "calendar.badge.clock")
                         }
 
@@ -32,7 +32,7 @@ struct CloserDashboardView: View {
                             Text("Leads")
                                 .font(.title3.bold())
                             if pendingLeads.isEmpty {
-                                EmptyStateView(title: "No pending leads", message: "Assigned leads that still need confirmation work will show here.", systemImage: "tray")
+                                EmptyStateView(title: "No assigned leads", message: "Door knocker leads that still need confirmation or follow-through will appear here.", systemImage: "tray")
                             } else {
                                 ForEach(pendingLeads) { lead in
                                     NavigationLink {
@@ -53,7 +53,7 @@ struct CloserDashboardView: View {
                             Text("My Appointments")
                                 .font(.title3.bold())
                             if scheduledLeads.isEmpty {
-                                EmptyStateView(title: "Nothing on schedule", message: "Confirmed appointments move here for closer execution.", systemImage: "calendar")
+                                EmptyStateView(title: "Nothing on schedule", message: "Once the door knocker confirms the appointment, it moves here for closer execution.", systemImage: "calendar")
                             } else {
                                 ForEach(scheduledLeads) { lead in
                                     NavigationLink {

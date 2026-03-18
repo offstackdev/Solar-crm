@@ -26,14 +26,20 @@ struct DoorKnockerLeadDetailView: View {
 
                 Section("Actions") {
                     if lead.currentStatus.isVisibleOnDoorKnockerActiveBoard {
-                        Button("Appointment Confirmed") {
-                            Task {
-                                await appState.updateLeadStatus(
-                                    leadID: leadID,
-                                    status: .appointmentConfirmed,
-                                    note: "Door knocker confirmed the appointment with prospect"
-                                )
+                        if lead.appointmentDate != nil {
+                            Button("Appointment Confirmed") {
+                                Task {
+                                    await appState.updateLeadStatus(
+                                        leadID: leadID,
+                                        status: .appointmentConfirmed,
+                                        note: "Door knocker confirmed the appointment with prospect"
+                                    )
+                                }
                             }
+                        } else {
+                            Text("Add an appointment time before handing this lead to the closer.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
                         }
 
                         Button("Appointment Canceled") {

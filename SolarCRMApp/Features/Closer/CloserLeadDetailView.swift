@@ -4,6 +4,8 @@ struct CloserLeadDetailView: View {
     @EnvironmentObject private var appState: AppState
     let leadID: UUID
     @State private var selectedOutcome: LeadOutcome = .closed
+    @State private var isRequestingReminder = false
+    @State private var reminderMessage: String?
 
     private var lead: Lead? {
         appState.leads.first(where: { $0.id == leadID })
@@ -26,8 +28,37 @@ struct CloserLeadDetailView: View {
                 }
 
                 Section("Closer Actions") {
-                    Button("Remind to Confirm Appointment") {
-                        Task { await appState.requestReminder(for: leadID) }
+                    if lead.currentStatus == .submitted || lead.currentStatus == .pendingConfirmation || lead.currentStatus == .appointmentRescheduled {
+                        Button {
+                            Task {
+                                isRequestingReminder = true
+                                let result = await appState.requestReminder(for: leadID)
+                                isRequestingReminder = false
+
+                                switch result {
+                                case .sent:
+                                    reminderMessage = "Reminder sent to \(appState.userName(for: lead.createdByDoorKnockerID))."
+                                case .alreadyPending:
+                                    reminderMessage = "A reminder is already pending for this lead."
+                                case .failed:
+                                    reminderMessage = "Reminder could not be sent. Try again."
+                                }
+                            }
+                        } label: {
+                            HStack {
+                                if isRequestingReminder {
+                                    ProgressView()
+                                }
+                                Text("Remind to Confirm Appointment")
+                            }
+                        }
+                        .disabled(isRequestingReminder)
+                    }
+
+                    if let reminderMessage {
+                        Text(reminderMessage)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
 
                     if lead.currentStatus.isConfirmedForCloserSchedule {

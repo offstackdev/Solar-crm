@@ -2,12 +2,14 @@ import SwiftUI
 
 struct LeadReviewView: View {
     let extraction: LeadExtraction
-    let onSave: (LeadFormDraft) async -> Void
+    let assignedCloserName: String?
+    let onSave: (LeadFormDraft) async -> Bool
 
     @State private var draft: LeadFormDraft
 
-    init(extraction: LeadExtraction, onSave: @escaping (LeadFormDraft) async -> Void) {
+    init(extraction: LeadExtraction, assignedCloserName: String?, onSave: @escaping (LeadFormDraft) async -> Bool) {
         self.extraction = extraction
+        self.assignedCloserName = assignedCloserName
         self.onSave = onSave
         _draft = State(initialValue: extraction.draft)
     }
@@ -37,7 +39,8 @@ struct LeadReviewView: View {
                 title: "Verify Extracted Lead",
                 draft: $draft,
                 source: .imageIntake,
-                showReviewContext: true
+                showReviewContext: true,
+                assignedCloserName: assignedCloserName
             ) {
                 await onSave(draft)
             }

@@ -22,6 +22,17 @@ struct LeadFormDraft: Equatable {
     var languagePreference: String = "English"
 
     var isValidForSubmission: Bool {
-        !homeownerFullName.isEmpty && !phoneNumber.isEmpty && !propertyAddress.isEmpty && !city.isEmpty && !state.isEmpty && !zipCode.isEmpty
+        missingRequiredFields.isEmpty
+    }
+
+    var missingRequiredFields: [String] {
+        var fields: [String] = []
+        if homeownerFullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { fields.append("Homeowner Name") }
+        if phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { fields.append("Phone Number") }
+        if propertyAddress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { fields.append("Address") }
+        if city.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { fields.append("City") }
+        if state.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { fields.append("State") }
+        if zipCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { fields.append("Zip") }
+        return fields
     }
 }

@@ -1,6 +1,12 @@
 import Foundation
 import SwiftUI
 
+enum ReminderRequestResult {
+    case sent
+    case alreadyPending
+    case failed
+}
+
 @MainActor
 final class AppState: ObservableObject {
     @Published var currentUser: AppUser?
@@ -51,8 +57,8 @@ final class AppState: ObservableObject {
         }
     }
 
-    func saveNewLead(from draft: LeadFormDraft, source overrideSource: LeadSource? = nil) async {
-        guard let currentUser else { return }
+    func saveNewLead(from draft: LeadFormDraft, source overrideSource: LeadSource? = nil) async -> Bool {
+        guard let currentUser else { return false }
         let assignedCloserID = currentUser.assignedCloserID
         let timestamp = Date()
         let effectiveSource = overrideSource ?? draft.leadSource
@@ -90,29 +96,22 @@ final class AppState: ObservableObject {
 
         _ = await services.leadService.saveLead(lead)
         await refreshLeadData()
-        if let closerID = assignedCloserID {
-            await sendNotification(
-                userID: closerID,
-                leadID: lead.id,
-                kind: .assignmentChanged,
-                title: "New solar lead assigned",
-                message: "\(lead.homeownerFullName) was submitted by \(currentUser.fullName)."
-            )
-        }
+        return true
     }
 
     func updateLeadStatus(leadID: UUID, status: LeadStatus, note: String) async {
         guard let user = currentUser, var lead = leads.first(where: { $0.id == leadID }) else { return }
+        let timestamp = Date()
         lead.currentStatus = status
-        lead.updatedAt = Date()
-        lead.statusHistory.insert(.init(id: UUID(), status: status, changedByUserID: user.id, note: note, changedAt: Date()), at: 0)
+        lead.updatedAt = timestamp
+        lead.statusHistory.insert(.init(id: UUID(), status: status, changedByUserID: user.id, note: note, changedAt: timestamp), at: 0)
 
         if status == .appointmentConfirmed {
             lead.currentStatus = .sentToCloser
-            lead.statusHistory.insert(.init(id: UUID(), status: .sentToCloser, changedByUserID: user.id, note: "Lead routed to closer after confirmation", changedAt: Date()), at: 0)
+            lead.statusHistory.insert(.init(id: UUID(), status: .sentToCloser, changedByUserID: user.id, note: "Lead routed to closer after confirmation", changedAt: timestamp), at: 0)
             if lead.assignedCloserID != nil {
                 lead.currentStatus = .onCloserSchedule
-                lead.statusHistory.insert(.init(id: UUID(), status: .onCloserSchedule, changedByUserID: user.id, note: "Appointment placed on closer schedule", changedAt: Date()), at: 0)
+                lead.statusHistory.insert(.init(id: UUID(), status: .onCloserSchedule, changedByUserID: user.id, note: "Appointment placed on closer schedule", changedAt: timestamp), at: 0)
             }
         }
 
@@ -130,12 +129,21 @@ final class AppState: ObservableObject {
         }
     }
 
-    func requestReminder(for leadID: UUID) async {
+    func requestReminder(for leadID: UUID) async -> ReminderRequestResult {
         guard
             let user = currentUser,
             var lead = leads.first(where: { $0.id == leadID }),
             let doorKnocker = users.first(where: { $0.id == lead.createdByDoorKnockerID })
-        else { return }
+        else { return .failed }
+
+        let existingNotifications = await services.notificationService.fetchNotifications(for: doorKnocker.id)
+        let alreadyPending = existingNotifications.contains {
+            $0.leadID == lead.id && $0.kind == .reminderRequest && !$0.isRead
+        }
+
+        if alreadyPending {
+            return .alreadyPending
+        }
 
         lead.updatedAt = Date()
         lead.statusHistory.insert(.init(id: UUID(), status: lead.currentStatus, changedByUserID: user.id, note: "Closer requested reminder to confirm appointment", changedAt: Date()), at: 0)
@@ -149,6 +157,7 @@ final class AppState: ObservableObject {
             message: "\(user.fullName) asked you to re-confirm \(lead.homeownerFullName)'s appointment."
         )
         await refreshLeadData()
+        return .sent
     }
 
     func updateCloserOutcome(leadID: UUID, outcome: LeadOutcome) async {
@@ -198,7 +207,7 @@ final class AppState: ObservableObject {
         case .doorKnocker:
             return leads.filter { $0.createdByDoorKnockerID == currentUser.id }
         case .closer:
-            return leads.filter { $0.assignedCloserID == currentUser.id }
+            return leads.filter { $0.assignedCloserID == currentUser.id && $0.currentStatus.isVisibleToCloser }
         case .manager:
             return leads
         }
