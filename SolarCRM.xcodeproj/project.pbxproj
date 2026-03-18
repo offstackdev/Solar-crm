@@ -36,6 +36,7 @@
 		931D0E50874EE3CB9A9AF924 /* NewLeadFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A083CF00BDC4D8DF51BA21EF /* NewLeadFlowView.swift */; };
 		A7AB119F7EDE3D774566C63A /* SolarCRMApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 537F8430E9EFC3F81357B75E /* SolarCRMApp.swift */; };
 		A9FE7E8025228B72178E9F24 /* LeadHistoryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBD8C557F999C2F345D365FE /* LeadHistoryItem.swift */; };
+		AB1198410C30D3647ACA18AC /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B3D21CBC9A95735EDE0858C1 /* LaunchScreen.storyboard */; };
 		ABE4422B19EE69D9093E89A1 /* CloserLeadDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD936BEB2DEBD75C63C7E2F /* CloserLeadDetailView.swift */; };
 		B04C344A18777E3443A9F5E2 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5FD0E5B52D9ACD550802BF /* Components.swift */; };
 		B48C2986741D4AA1B21C8C1E /* ManagerTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525767BED8DD23C0D302ACF8 /* ManagerTabView.swift */; };
@@ -87,6 +88,7 @@
 		9FA5FA8E18C5D3D316B26317 /* CloserDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloserDashboardView.swift; sourceTree = "<group>"; };
 		A083CF00BDC4D8DF51BA21EF /* NewLeadFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewLeadFlowView.swift; sourceTree = "<group>"; };
 		AE7B75FD8EEE8F57B25F7A42 /* LeadStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeadStatus.swift; sourceTree = "<group>"; };
+		B3D21CBC9A95735EDE0858C1 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		BAD936BEB2DEBD75C63C7E2F /* CloserLeadDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloserLeadDetailView.swift; sourceTree = "<group>"; };
 		C2EE5D76BC829713966E36EB /* AppNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNotification.swift; sourceTree = "<group>"; };
 		CA5FD0E5B52D9ACD550802BF /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
@@ -106,6 +108,7 @@
 				5573A3606A872105B44A7A6D /* App */,
 				457FDA5A4B2540BD30DF841E /* Core */,
 				E5383B1D66406E1D5B382C7B /* Features */,
+				9075194395587531070BA6B1 /* Resources */,
 			);
 			path = SolarCRMApp;
 			sourceTree = "<group>";
@@ -199,6 +202,14 @@
 			path = Utilities;
 			sourceTree = "<group>";
 		};
+		9075194395587531070BA6B1 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				B3D21CBC9A95735EDE0858C1 /* LaunchScreen.storyboard */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		AD8B3033696DE8D6B0BA8BAE /* DoorKnocker */ = {
 			isa = PBXGroup;
 			children = (
@@ -270,6 +281,7 @@
 			buildConfigurationList = 0FDF1349CA5FA0839BFE2AF6 /* Build configuration list for PBXNativeTarget "SolarCRM" */;
 			buildPhases = (
 				6ACA42D2FF95EF0801249F13 /* Sources */,
+				C4EB5B0798F2220098D57A42 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -311,6 +323,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C4EB5B0798F2220098D57A42 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AB1198410C30D3647ACA18AC /* LaunchScreen.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		6ACA42D2FF95EF0801249F13 /* Sources */ = {
@@ -438,6 +461,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Solar CRM";
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -455,6 +479,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Solar CRM";
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
