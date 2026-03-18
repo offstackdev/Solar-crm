@@ -5,10 +5,36 @@ struct CloserLeadDetailView: View {
     let leadID: UUID
     @State private var selectedOutcome: LeadOutcome = .closed
     @State private var isRequestingReminder = false
+    @State private var isSavingOutcome = false
     @State private var reminderMessage: String?
+    @State private var outcomeMessage: String?
 
     private var lead: Lead? {
         appState.leads.first(where: { $0.id == leadID })
+    }
+
+    private var canRequestReminder: Bool {
+        guard let lead else { return false }
+        return lead.currentStatus == .submitted || lead.currentStatus == .pendingConfirmation || lead.currentStatus == .appointmentRescheduled
+    }
+
+    private var canMarkAppointmentRun: Bool {
+        guard let lead else { return false }
+        return lead.currentStatus == .onCloserSchedule || lead.currentStatus == .sentToCloser
+    }
+
+    private var canSaveOutcome: Bool {
+        lead?.currentStatus == .appointmentRun
+    }
+
+    private var hasRecordedFinalOutcome: Bool {
+        guard let lead else { return false }
+        switch lead.currentStatus {
+        case .closed, .oneLegger, .needsFollowUp, .noShow, .notInterested, .appointmentRescheduled:
+            return true
+        default:
+            return false
+        }
     }
 
     var body: some View {
@@ -28,7 +54,7 @@ struct CloserLeadDetailView: View {
                 }
 
                 Section("Closer Actions") {
-                    if lead.currentStatus == .submitted || lead.currentStatus == .pendingConfirmation || lead.currentStatus == .appointmentRescheduled {
+                    if canRequestReminder {
                         Button {
                             Task {
                                 isRequestingReminder = true
@@ -61,7 +87,7 @@ struct CloserLeadDetailView: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    if lead.currentStatus.isConfirmedForCloserSchedule {
+                    if canMarkAppointmentRun {
                         Button("Mark Appointment Run") {
                             Task {
                                 await appState.updateLeadStatus(
@@ -72,17 +98,55 @@ struct CloserLeadDetailView: View {
                             }
                         }
                     }
+
+                    if lead.currentStatus == .appointmentRun {
+                        Text("Appointment is marked as run. Record the outcome below.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 Section("Outcome") {
-                    Picker("Result", selection: $selectedOutcome) {
-                        ForEach(LeadOutcome.allCases) { outcome in
-                            Text(outcome.rawValue).tag(outcome)
+                    if hasRecordedFinalOutcome && !canSaveOutcome {
+                        Text("Current outcome: \(lead.currentStatus.rawValue)")
+                            .font(.subheadline)
+                    } else {
+                        Picker("Result", selection: $selectedOutcome) {
+                            ForEach(LeadOutcome.allCases) { outcome in
+                                Text(outcome.rawValue).tag(outcome)
+                            }
+                        }
+
+                        Button {
+                            Task {
+                                isSavingOutcome = true
+                                await appState.updateCloserOutcome(leadID: leadID, outcome: selectedOutcome)
+                                outcomeMessage = selectedOutcome == .rescheduled
+                                    ? "Outcome saved. The lead was returned for appointment re-confirmation."
+                                    : "Outcome saved and shared back with the door knocker."
+                                isSavingOutcome = false
+                            }
+                        } label: {
+                            HStack {
+                                if isSavingOutcome {
+                                    ProgressView()
+                                }
+                                Text("Save Outcome")
+                            }
+                        }
+                        .disabled(!canSaveOutcome || isSavingOutcome)
+
+                        if !canSaveOutcome && !hasRecordedFinalOutcome {
+                            Text("Mark the appointment as run before recording an outcome.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
                         }
                     }
 
-                    Button("Save Outcome") {
-                        Task { await appState.updateCloserOutcome(leadID: leadID, outcome: selectedOutcome) }
+                    if let outcomeMessage {
+                        Text(outcomeMessage)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
                 }
 
@@ -108,5 +172,18 @@ struct CloserLeadDetailView: View {
             }
         }
         .navigationTitle("Lead Detail")
+        .onAppear {
+            if let lead {
+                switch lead.currentStatus {
+                case .closed: selectedOutcome = .closed
+                case .oneLegger: selectedOutcome = .oneLegger
+                case .needsFollowUp: selectedOutcome = .needsFollowUp
+                case .noShow: selectedOutcome = .noShow
+                case .appointmentRescheduled: selectedOutcome = .rescheduled
+                case .notInterested: selectedOutcome = .notInterested
+                default: break
+                }
+            }
+        }
     }
 }

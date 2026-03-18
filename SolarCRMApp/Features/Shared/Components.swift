@@ -93,6 +93,48 @@ struct LeadCardView: View {
     }
 }
 
+struct CloserLeadCardView: View {
+    let lead: Lead
+    let doorKnockerName: String
+
+    private var latestUpdateText: String {
+        lead.statusHistory.first?.note ?? "No recent updates"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(lead.homeownerFullName)
+                        .font(.headline)
+                    Text("\(lead.propertyAddress), \(lead.city)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                StatusBadge(status: lead.currentStatus)
+            }
+
+            HStack {
+                Label(doorKnockerName, systemImage: "person")
+                Spacer()
+                if let appointmentDate = lead.appointmentDate {
+                    Label(appointmentDate.formatted(date: .abbreviated, time: .shortened), systemImage: "calendar")
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+            Text(latestUpdateText)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+        }
+        .padding()
+        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+}
+
 struct EmptyStateView: View {
     let title: String
     let message: String

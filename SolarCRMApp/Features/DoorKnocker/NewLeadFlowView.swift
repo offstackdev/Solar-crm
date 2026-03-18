@@ -39,6 +39,15 @@ struct NewLeadFlowView: View {
                 }
             }
 
+            Section("AI Intake") {
+                Text("Upload a note screenshot or field photo. AI extracts likely lead details, then you verify every field before anything is saved.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text("Image-created leads follow the same handoff flow as manual leads.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
             if isExtracting {
                 Section {
                     HStack {
@@ -52,6 +61,19 @@ struct NewLeadFlowView: View {
                 Section {
                     Text(extractionError)
                         .foregroundStyle(.red)
+                    NavigationLink {
+                        LeadFormView(
+                            title: "Manual Lead Entry",
+                            draft: $draft,
+                            source: draft.leadSource,
+                            showReviewContext: false,
+                            assignedCloserName: assignedCloserName
+                        ) {
+                            await appState.saveNewLead(from: draft)
+                        }
+                    } label: {
+                        Text("Continue with Manual Entry")
+                    }
                 }
             }
         }
@@ -64,9 +86,11 @@ struct NewLeadFlowView: View {
                 await appState.saveNewLead(from: reviewedDraft, source: .imageIntake)
             }
         }
-        .task(id: selectedItem) {
-            guard selectedItem != nil else { return }
-            await runExtraction()
+        .onChange(of: selectedItem) { _, newValue in
+            guard newValue != nil else { return }
+            Task {
+                await runExtraction()
+            }
         }
     }
 
@@ -81,8 +105,10 @@ struct NewLeadFlowView: View {
             extraction = extracted
             draft = extracted.draft
             showReviewScreen = true
+            selectedItem = nil
         } catch {
             extractionError = "AI extraction could not parse that image. Continue with manual entry instead."
+            selectedItem = nil
         }
     }
 }

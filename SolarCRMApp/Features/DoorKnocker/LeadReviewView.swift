@@ -16,24 +16,44 @@ struct LeadReviewView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if !extraction.lowConfidenceFields.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Review low-confidence fields")
-                        .font(.headline)
-                    ForEach(extraction.lowConfidenceFields) { field in
-                        HStack {
-                            Text(field.fieldName)
-                            Spacer()
-                            Text("\(Int(field.confidence * 100))%")
-                                .foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 12) {
+                Text("AI Review")
+                    .font(.headline)
+                Text("Review and edit the extracted fields before saving. Nothing is auto-submitted.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                if !extraction.lowConfidenceFields.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Low-confidence fields")
+                            .font(.subheadline.weight(.semibold))
+                        ForEach(extraction.lowConfidenceFields) { field in
+                            HStack {
+                                Text(field.fieldName)
+                                Spacer()
+                                Text("\(Int(field.confidence * 100))%")
+                                    .foregroundStyle(.orange)
+                            }
+                            .font(.subheadline)
                         }
-                        .font(.subheadline)
                     }
                 }
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.orange.opacity(0.08))
+
+                DisclosureGroup("Captured source text") {
+                    Text(extraction.rawText)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, 6)
+                }
+
+                Text("This lead will save as Image Intake and follow the same closer handoff flow once the appointment is confirmed.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.orange.opacity(0.08))
 
             LeadFormView(
                 title: "Verify Extracted Lead",

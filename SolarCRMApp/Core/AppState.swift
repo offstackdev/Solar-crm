@@ -61,20 +61,21 @@ final class AppState: ObservableObject {
         guard let currentUser else { return false }
         let assignedCloserID = currentUser.assignedCloserID
         let timestamp = Date()
-        let effectiveSource = overrideSource ?? draft.leadSource
-        let initialStatus: LeadStatus = draft.hasAppointment ? .pendingConfirmation : .submitted
+        let cleanedDraft = draft.cleaned()
+        let effectiveSource = overrideSource ?? cleanedDraft.leadSource
+        let initialStatus: LeadStatus = cleanedDraft.hasAppointment ? .pendingConfirmation : .submitted
         let lead = Lead(
             id: UUID(),
-            homeownerFullName: draft.homeownerFullName,
-            phoneNumber: draft.phoneNumber,
-            email: draft.email,
-            propertyAddress: draft.propertyAddress,
-            city: draft.city,
-            state: draft.state,
-            zipCode: draft.zipCode,
-            utilityCompany: draft.utilityCompany,
-            notes: draft.notes,
-            appointmentDate: draft.hasAppointment ? draft.appointmentDate : nil,
+            homeownerFullName: cleanedDraft.homeownerFullName,
+            phoneNumber: cleanedDraft.phoneNumber,
+            email: cleanedDraft.email,
+            propertyAddress: cleanedDraft.propertyAddress,
+            city: cleanedDraft.city,
+            state: cleanedDraft.state,
+            zipCode: cleanedDraft.zipCode,
+            utilityCompany: cleanedDraft.utilityCompany,
+            notes: cleanedDraft.notes,
+            appointmentDate: cleanedDraft.hasAppointment ? cleanedDraft.appointmentDate : nil,
             leadSource: effectiveSource,
             createdByDoorKnockerID: currentUser.id,
             assignedCloserID: assignedCloserID,
@@ -85,13 +86,13 @@ final class AppState: ObservableObject {
             ],
             createdAt: timestamp,
             updatedAt: timestamp,
-            homeownerType: draft.homeownerType,
-            averageElectricBill: draft.averageElectricBill,
-            roofType: draft.roofType,
-            shadingNotes: draft.shadingNotes,
-            decisionMakerPresent: draft.decisionMakerPresent,
-            spousePresentRequired: draft.spousePresentRequired,
-            languagePreference: draft.languagePreference
+            homeownerType: cleanedDraft.homeownerType,
+            averageElectricBill: cleanedDraft.averageElectricBill,
+            roofType: cleanedDraft.roofType,
+            shadingNotes: cleanedDraft.shadingNotes,
+            decisionMakerPresent: cleanedDraft.decisionMakerPresent,
+            spousePresentRequired: cleanedDraft.spousePresentRequired,
+            languagePreference: cleanedDraft.languagePreference
         )
 
         _ = await services.leadService.saveLead(lead)
@@ -164,24 +165,36 @@ final class AppState: ObservableObject {
         guard let user = currentUser, var lead = leads.first(where: { $0.id == leadID }) else { return }
 
         let newStatus = outcome.resultingStatus
+        let timestamp = Date()
         lead.currentStatus = newStatus
-        lead.updatedAt = Date()
-        lead.statusHistory.insert(.init(id: UUID(), status: newStatus, changedByUserID: user.id, note: "Closer outcome updated to \(outcome.rawValue)", changedAt: Date()), at: 0)
+        lead.updatedAt = timestamp
 
         if outcome == .rescheduled {
-            lead.statusHistory.insert(.init(id: UUID(), status: .appointmentRescheduled, changedByUserID: user.id, note: "Appointment needs a new time", changedAt: Date()), at: 0)
+            lead.statusHistory.insert(.init(id: UUID(), status: .appointmentRescheduled, changedByUserID: user.id, note: "Closer requested a new appointment time and returned the lead for re-confirmation", changedAt: timestamp), at: 0)
+        } else {
+            lead.statusHistory.insert(.init(id: UUID(), status: newStatus, changedByUserID: user.id, note: "Closer outcome updated to \(outcome.rawValue)", changedAt: timestamp), at: 0)
         }
 
         _ = await services.leadService.updateLead(lead)
         await refreshLeadData()
 
-        await sendNotification(
-            userID: lead.createdByDoorKnockerID,
-            leadID: lead.id,
-            kind: .leadStatusUpdate,
-            title: "Closer updated lead status",
-            message: "\(lead.homeownerFullName) is now marked \(newStatus.rawValue)."
-        )
+        if outcome == .rescheduled {
+            await sendNotification(
+                userID: lead.createdByDoorKnockerID,
+                leadID: lead.id,
+                kind: .appointmentRescheduled,
+                title: "Appointment needs to be re-confirmed",
+                message: "\(lead.homeownerFullName) was marked Rescheduled by the closer and needs a new confirmed appointment time."
+            )
+        } else {
+            await sendNotification(
+                userID: lead.createdByDoorKnockerID,
+                leadID: lead.id,
+                kind: .leadStatusUpdate,
+                title: "Closer updated lead status",
+                message: "\(lead.homeownerFullName) is now marked \(newStatus.rawValue)."
+            )
+        }
     }
 
     func reassign(leadID: UUID, closerID: UUID) async {

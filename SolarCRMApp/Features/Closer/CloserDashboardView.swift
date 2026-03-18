@@ -11,8 +11,18 @@ struct CloserDashboardView: View {
         myLeads.filter { $0.currentStatus.isVisibleInCloserLeads }
     }
 
-    private var scheduledLeads: [Lead] {
-        myLeads.filter { $0.currentStatus.isConfirmedForCloserSchedule }
+    private var readyAppointments: [Lead] {
+        myLeads.filter { $0.currentStatus == .onCloserSchedule || $0.currentStatus == .sentToCloser }
+            .sorted { ($0.appointmentDate ?? .distantFuture) < ($1.appointmentDate ?? .distantFuture) }
+    }
+
+    private var runningAppointments: [Lead] {
+        myLeads.filter { $0.currentStatus == .appointmentRun }
+    }
+
+    private var recentOutcomes: [Lead] {
+        myLeads.filter { $0.currentStatus.isCompletedCloserOutcome }
+            .sorted { $0.updatedAt > $1.updatedAt }
     }
 
     var body: some View {
@@ -24,12 +34,17 @@ struct CloserDashboardView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
                         HStack(spacing: 12) {
-                            MetricCard(title: "Assigned Leads", value: "\(pendingLeads.count)", systemImage: "tray.full")
-                            MetricCard(title: "On Schedule", value: "\(scheduledLeads.count)", systemImage: "calendar.badge.clock")
+                            MetricCard(title: "Needs Confirmation", value: "\(pendingLeads.count)", systemImage: "tray.full")
+                            MetricCard(title: "Ready Appointments", value: "\(readyAppointments.count)", systemImage: "calendar.badge.clock")
+                        }
+
+                        HStack(spacing: 12) {
+                            MetricCard(title: "Running Now", value: "\(runningAppointments.count)", systemImage: "figure.walk.motion")
+                            MetricCard(title: "Recent Outcomes", value: "\(recentOutcomes.prefix(7).count)", systemImage: "checkmark.seal")
                         }
 
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Leads")
+                            Text("Needs Confirmation")
                                 .font(.title3.bold())
                             if pendingLeads.isEmpty {
                                 EmptyStateView(title: "No assigned leads", message: "Door knocker leads that still need confirmation or follow-through will appear here.", systemImage: "tray")
@@ -38,10 +53,9 @@ struct CloserDashboardView: View {
                                     NavigationLink {
                                         CloserLeadDetailView(leadID: lead.id)
                                     } label: {
-                                        LeadCardView(
+                                        CloserLeadCardView(
                                             lead: lead,
-                                            doorKnockerName: appState.userName(for: lead.createdByDoorKnockerID),
-                                            closerName: appState.userName(for: lead.assignedCloserID)
+                                            doorKnockerName: appState.userName(for: lead.createdByDoorKnockerID)
                                         )
                                     }
                                     .buttonStyle(.plain)
@@ -50,19 +64,38 @@ struct CloserDashboardView: View {
                         }
 
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("My Appointments")
+                            Text("Ready To Run")
                                 .font(.title3.bold())
-                            if scheduledLeads.isEmpty {
-                                EmptyStateView(title: "Nothing on schedule", message: "Once the door knocker confirms the appointment, it moves here for closer execution.", systemImage: "calendar")
+                            if readyAppointments.isEmpty {
+                                EmptyStateView(title: "Nothing ready", message: "Once the door knocker confirms the appointment, it moves here for closer execution.", systemImage: "calendar")
                             } else {
-                                ForEach(scheduledLeads) { lead in
+                                ForEach(readyAppointments) { lead in
                                     NavigationLink {
                                         CloserLeadDetailView(leadID: lead.id)
                                     } label: {
-                                        LeadCardView(
+                                        CloserLeadCardView(
                                             lead: lead,
-                                            doorKnockerName: appState.userName(for: lead.createdByDoorKnockerID),
-                                            closerName: appState.userName(for: lead.assignedCloserID)
+                                            doorKnockerName: appState.userName(for: lead.createdByDoorKnockerID)
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Recently Completed")
+                                .font(.title3.bold())
+                            if recentOutcomes.isEmpty {
+                                EmptyStateView(title: "No completed outcomes", message: "Saved appointment outcomes will appear here after the closer updates them.", systemImage: "checkmark.circle")
+                            } else {
+                                ForEach(recentOutcomes.prefix(5)) { lead in
+                                    NavigationLink {
+                                        CloserLeadDetailView(leadID: lead.id)
+                                    } label: {
+                                        CloserLeadCardView(
+                                            lead: lead,
+                                            doorKnockerName: appState.userName(for: lead.createdByDoorKnockerID)
                                         )
                                     }
                                     .buttonStyle(.plain)

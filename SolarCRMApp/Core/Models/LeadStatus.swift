@@ -50,6 +50,15 @@ enum LeadStatus: String, Codable, CaseIterable, Identifiable {
         }
     }
 
+    var isCompletedCloserOutcome: Bool {
+        switch self {
+        case .closed, .oneLegger, .needsFollowUp, .noShow, .notInterested:
+            return true
+        case .newLead, .needsVerification, .submitted, .pendingConfirmation, .appointmentConfirmed, .appointmentCanceled, .appointmentRescheduled, .sentToCloser, .onCloserSchedule, .appointmentRun:
+            return false
+        }
+    }
+
     var badgeTone: StatusTone {
         switch self {
         case .closed: return .success
