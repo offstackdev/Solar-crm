@@ -21,6 +21,10 @@ final class AppState: ObservableObject {
         services.isUsingBackend
     }
 
+    var supportsAIExtraction: Bool {
+        services.supportsAIExtraction
+    }
+
     var unreadNotificationCount: Int {
         notifications.filter { !$0.isRead }.count
     }
@@ -107,14 +111,23 @@ final class AppState: ObservableObject {
         )
 
         _ = await services.leadService.saveLead(lead)
+        guard let persistedLead = await verifyPersistedLead(
+            leadID: lead.id,
+            expectedStatus: initialStatus,
+            expectedAssignedCloserID: assignedCloserID,
+            expectedHistoryNotes: ["Lead submitted by \(currentUser.fullName)"]
+        ) else {
+            await refreshLeadData()
+            return false
+        }
 
         if let manager = users.first(where: { $0.role == .manager && $0.orgID == currentUser.orgID }) {
             await sendNotification(
                 userID: manager.id,
-                leadID: lead.id,
+                leadID: persistedLead.id,
                 kind: .leadStatusUpdate,
                 title: "New lead created",
-                message: "\(lead.homeownerFullName) was submitted by \(currentUser.fullName) with status \(initialStatus.rawValue)."
+                message: "\(persistedLead.homeownerFullName) was submitted by \(currentUser.fullName) with status \(initialStatus.rawValue)."
             )
         }
 
@@ -125,67 +138,85 @@ final class AppState: ObservableObject {
     func updateLeadStatus(leadID: UUID, status: LeadStatus, note: String) async {
         guard let user = currentUser, var lead = leads.first(where: { $0.id == leadID }) else { return }
         let timestamp = Date()
+        var expectedStatus = status
+        var expectedHistoryNotes = [note]
         lead.currentStatus = status
         lead.updatedAt = timestamp
         lead.statusHistory.insert(.init(id: UUID(), status: status, changedByUserID: user.id, note: note, changedAt: timestamp), at: 0)
 
         if status == .appointmentConfirmed {
+            expectedStatus = .sentToCloser
             lead.currentStatus = .sentToCloser
-            lead.statusHistory.insert(.init(id: UUID(), status: .sentToCloser, changedByUserID: user.id, note: "Lead routed to closer after confirmation", changedAt: timestamp), at: 0)
+            let handoffNote = "Lead routed to closer after confirmation"
+            expectedHistoryNotes.append(handoffNote)
+            lead.statusHistory.insert(.init(id: UUID(), status: .sentToCloser, changedByUserID: user.id, note: handoffNote, changedAt: timestamp), at: 0)
             if lead.assignedCloserID != nil {
+                expectedStatus = .onCloserSchedule
                 lead.currentStatus = .onCloserSchedule
-                lead.statusHistory.insert(.init(id: UUID(), status: .onCloserSchedule, changedByUserID: user.id, note: "Appointment placed on closer schedule", changedAt: timestamp), at: 0)
+                let scheduleNote = "Appointment placed on closer schedule"
+                expectedHistoryNotes.append(scheduleNote)
+                lead.statusHistory.insert(.init(id: UUID(), status: .onCloserSchedule, changedByUserID: user.id, note: scheduleNote, changedAt: timestamp), at: 0)
             }
         }
 
         _ = await services.leadService.updateLead(lead)
-        await markNotificationsRead(for: lead.id, kind: .reminderRequest, userID: lead.createdByDoorKnockerID)
+        guard let persistedLead = await verifyPersistedLead(
+            leadID: lead.id,
+            expectedStatus: expectedStatus,
+            expectedAssignedCloserID: lead.assignedCloserID,
+            expectedHistoryNotes: expectedHistoryNotes
+        ) else {
+            await refreshLeadData()
+            return
+        }
+
+        await markNotificationsRead(for: persistedLead.id, kind: .reminderRequest, userID: persistedLead.createdByDoorKnockerID)
         await refreshLeadData()
 
-        if let closerID = lead.assignedCloserID, user.role == .doorKnocker, status == .appointmentConfirmed {
+        if let closerID = persistedLead.assignedCloserID, user.role == .doorKnocker, status == .appointmentConfirmed {
             await sendNotification(
                 userID: closerID,
-                leadID: lead.id,
+                leadID: persistedLead.id,
                 kind: .appointmentConfirmed,
                 title: "Appointment confirmed",
-                message: "\(lead.homeownerFullName) is confirmed and ready for your schedule."
+                message: "\(persistedLead.homeownerFullName) is confirmed and ready for your schedule."
             )
         }
 
         if user.role == .doorKnocker, status == .appointmentConfirmed {
             await sendNotification(
-                userID: lead.createdByDoorKnockerID,
-                leadID: lead.id,
+                userID: persistedLead.createdByDoorKnockerID,
+                leadID: persistedLead.id,
                 kind: .leadStatusUpdate,
                 title: "Lead handed off to closer",
-                message: "\(lead.homeownerFullName) moved out of your active queue and onto the closer schedule."
+                message: "\(persistedLead.homeownerFullName) moved out of your active queue and onto the closer schedule."
             )
         }
 
         if status == .appointmentCanceled {
-            if let closerID = lead.assignedCloserID {
+            if let closerID = persistedLead.assignedCloserID {
                 await sendNotification(
                     userID: closerID,
-                    leadID: lead.id,
+                    leadID: persistedLead.id,
                     kind: .leadStatusUpdate,
                     title: "Appointment canceled",
-                    message: "\(lead.homeownerFullName) was canceled by the door knocker."
+                    message: "\(persistedLead.homeownerFullName) was canceled by the door knocker."
                 )
             }
-            await markNotificationsRead(for: lead.id, kind: .reminderRequest, userID: lead.createdByDoorKnockerID)
+            await markNotificationsRead(for: persistedLead.id, kind: .reminderRequest, userID: persistedLead.createdByDoorKnockerID)
         }
 
         if status == .appointmentRescheduled {
-            if let closerID = lead.assignedCloserID {
+            if let closerID = persistedLead.assignedCloserID {
                 await sendNotification(
                     userID: closerID,
-                    leadID: lead.id,
+                    leadID: persistedLead.id,
                     kind: .appointmentRescheduled,
                     title: "Appointment rescheduled",
-                    message: "\(lead.homeownerFullName) needs a new confirmed time from the door knocker."
+                    message: "\(persistedLead.homeownerFullName) needs a new confirmed time from the door knocker."
                 )
             }
-            await markNotificationsRead(for: lead.id, kind: .reminderRequest, userID: lead.createdByDoorKnockerID)
+            await markNotificationsRead(for: persistedLead.id, kind: .reminderRequest, userID: persistedLead.createdByDoorKnockerID)
         }
     }
 
@@ -230,69 +261,104 @@ final class AppState: ObservableObject {
 
         let newStatus = outcome.resultingStatus
         let timestamp = Date()
+        let outcomeNote: String
         lead.currentStatus = newStatus
         lead.updatedAt = timestamp
 
         if outcome == .rescheduled {
-            lead.statusHistory.insert(.init(id: UUID(), status: .appointmentRescheduled, changedByUserID: user.id, note: "Closer requested a new appointment time and returned the lead for re-confirmation", changedAt: timestamp), at: 0)
+            outcomeNote = "Closer requested a new appointment time and returned the lead for re-confirmation"
+            lead.statusHistory.insert(.init(id: UUID(), status: .appointmentRescheduled, changedByUserID: user.id, note: outcomeNote, changedAt: timestamp), at: 0)
         } else {
-            lead.statusHistory.insert(.init(id: UUID(), status: newStatus, changedByUserID: user.id, note: "Closer outcome updated to \(outcome.rawValue)", changedAt: timestamp), at: 0)
+            outcomeNote = "Closer outcome updated to \(outcome.rawValue)"
+            lead.statusHistory.insert(.init(id: UUID(), status: newStatus, changedByUserID: user.id, note: outcomeNote, changedAt: timestamp), at: 0)
         }
 
         _ = await services.leadService.updateLead(lead)
+        guard let persistedLead = await verifyPersistedLead(
+            leadID: lead.id,
+            expectedStatus: newStatus,
+            expectedAssignedCloserID: lead.assignedCloserID,
+            expectedHistoryNotes: [outcomeNote]
+        ) else {
+            await refreshLeadData()
+            return
+        }
         await refreshLeadData()
 
         if outcome == .rescheduled {
             await sendNotification(
-                userID: lead.createdByDoorKnockerID,
-                leadID: lead.id,
+                userID: persistedLead.createdByDoorKnockerID,
+                leadID: persistedLead.id,
                 kind: .appointmentRescheduled,
                 title: "Appointment needs to be re-confirmed",
-                message: "\(lead.homeownerFullName) was marked Rescheduled by the closer and needs a new confirmed appointment time."
+                message: "\(persistedLead.homeownerFullName) was marked Rescheduled by the closer and needs a new confirmed appointment time."
             )
         } else {
             await sendNotification(
-                userID: lead.createdByDoorKnockerID,
-                leadID: lead.id,
+                userID: persistedLead.createdByDoorKnockerID,
+                leadID: persistedLead.id,
                 kind: .leadStatusUpdate,
-                title: "Closer updated lead status",
-                message: "\(lead.homeownerFullName) is now marked \(newStatus.rawValue)."
+                title: "Closer outcome recorded",
+                message: "\(persistedLead.homeownerFullName) is now marked \(newStatus.rawValue)."
             )
         }
 
-        if let manager = users.first(where: { $0.role == .manager && $0.orgID == lead.orgID }) {
+        if let manager = users.first(where: { $0.role == .manager && $0.orgID == persistedLead.orgID }) {
             await sendNotification(
                 userID: manager.id,
-                leadID: lead.id,
+                leadID: persistedLead.id,
                 kind: .leadStatusUpdate,
                 title: "Closer outcome recorded",
-                message: "\(lead.homeownerFullName) was updated to \(newStatus.rawValue) by \(user.fullName)."
+                message: "\(persistedLead.homeownerFullName) was updated to \(newStatus.rawValue) by \(user.fullName)."
             )
         }
     }
 
     func reassign(leadID: UUID, closerID: UUID) async {
         guard let user = currentUser, user.role == .manager, var lead = leads.first(where: { $0.id == leadID }) else { return }
+        let previousCloserID = lead.assignedCloserID
         lead.assignedCloserID = closerID
         lead.updatedAt = Date()
-        lead.statusHistory.insert(.init(id: UUID(), status: lead.currentStatus, changedByUserID: user.id, note: "Manager reassigned closer", changedAt: Date()), at: 0)
+        let reassignmentNote = previousCloserID == nil
+            ? "Manager assigned closer to \(userName(for: closerID))"
+            : "Manager reassigned closer from \(userName(for: previousCloserID)) to \(userName(for: closerID))"
+        lead.statusHistory.insert(.init(id: UUID(), status: lead.currentStatus, changedByUserID: user.id, note: reassignmentNote, changedAt: Date()), at: 0)
         _ = await services.leadService.updateLead(lead)
+        guard let persistedLead = await verifyPersistedLead(
+            leadID: lead.id,
+            expectedStatus: lead.currentStatus,
+            expectedAssignedCloserID: closerID,
+            expectedHistoryNotes: [reassignmentNote]
+        ) else {
+            await refreshLeadData()
+            return
+        }
 
         await sendNotification(
             userID: closerID,
-            leadID: lead.id,
+            leadID: persistedLead.id,
             kind: .assignmentChanged,
-            title: "Lead reassigned to you",
-            message: "\(lead.homeownerFullName) is now assigned to you."
+            title: previousCloserID == nil ? "New lead assigned" : "Lead reassigned to you",
+            message: "\(persistedLead.homeownerFullName) is now assigned to you."
         )
 
         await sendNotification(
-            userID: lead.createdByDoorKnockerID,
-            leadID: lead.id,
+            userID: persistedLead.createdByDoorKnockerID,
+            leadID: persistedLead.id,
             kind: .assignmentChanged,
             title: "Closer assignment changed",
-            message: "\(lead.homeownerFullName) is now assigned to \(userName(for: closerID))."
+            message: "\(persistedLead.homeownerFullName) is now assigned to \(userName(for: closerID))."
         )
+
+        if let previousCloserID, previousCloserID != closerID {
+            await sendNotification(
+                userID: previousCloserID,
+                leadID: persistedLead.id,
+                kind: .assignmentChanged,
+                title: "Lead moved off your queue",
+                message: "\(persistedLead.homeownerFullName) was reassigned to \(userName(for: closerID))."
+            )
+        }
         await refreshLeadData()
     }
 
@@ -345,6 +411,32 @@ final class AppState: ObservableObject {
         for notification in existingNotifications where notification.leadID == leadID && notification.kind == kind && !notification.isRead {
             await services.notificationService.markRead(notificationID: notification.id)
         }
+    }
+
+    private func verifyPersistedLead(
+        leadID: UUID,
+        expectedStatus: LeadStatus,
+        expectedAssignedCloserID: UUID?,
+        expectedHistoryNotes: [String]
+    ) async -> Lead? {
+        guard let persistedLead = await services.leadService.fetchLead(id: leadID) else {
+            return nil
+        }
+
+        guard persistedLead.currentStatus == expectedStatus else {
+            return nil
+        }
+
+        guard persistedLead.assignedCloserID == expectedAssignedCloserID else {
+            return nil
+        }
+
+        let persistedNotes = Set(persistedLead.statusHistory.map(\.note))
+        guard expectedHistoryNotes.allSatisfy(persistedNotes.contains) else {
+            return nil
+        }
+
+        return persistedLead
     }
 }
 

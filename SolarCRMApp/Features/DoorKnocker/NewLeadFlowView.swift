@@ -34,16 +34,25 @@ struct NewLeadFlowView: View {
                     Label("Manual Entry", systemImage: "square.and.pencil")
                 }
 
-                PhotosPicker(selection: $selectedItem, matching: .images) {
-                    Label("Import Notes Image", systemImage: "photo.on.rectangle")
+                if appState.supportsAIExtraction {
+                    PhotosPicker(selection: $selectedItem, matching: .images) {
+                        Label("Import Notes Image", systemImage: "photo.on.rectangle")
+                    }
+                } else {
+                    Label("Image Intake Coming Soon", systemImage: "photo.badge.exclamationmark")
+                        .foregroundStyle(.secondary)
                 }
             }
 
             Section("AI Intake") {
-                Text("Upload a note screenshot or field photo. AI extracts likely lead details, then you verify every field before anything is saved.")
+                Text(appState.supportsAIExtraction
+                     ? "Upload a note screenshot or field photo. AI extracts likely lead details, then you verify every field before anything is saved."
+                     : "Image-based AI extraction is disabled until a real backend OCR/AI flow is connected.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Text("Image-created leads follow the same handoff flow as manual leads.")
+                Text(appState.supportsAIExtraction
+                     ? "Image-created leads follow the same handoff flow as manual leads."
+                     : "Use manual entry for live workflows.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

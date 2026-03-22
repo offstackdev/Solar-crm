@@ -6,6 +6,7 @@ struct ServiceContainer {
     let notificationService: NotificationServicing
     let aiExtractionService: AILeadExtracting
     let isUsingBackend: Bool
+    let supportsAIExtraction: Bool
 
     static func bootstrap() -> ServiceContainer {
         if let configuration = BackendConfiguration.loadFromEnvironment() {
@@ -14,8 +15,9 @@ struct ServiceContainer {
                 authService: SupabaseAuthService(configuration: configuration, sessionStore: sessionStore),
                 leadService: SupabaseLeadService(configuration: configuration, sessionStore: sessionStore),
                 notificationService: SupabaseNotificationService(configuration: configuration, sessionStore: sessionStore),
-                aiExtractionService: MockAIExtractionService(),
-                isUsingBackend: true
+                aiExtractionService: UnavailableAIExtractionService(),
+                isUsingBackend: true,
+                supportsAIExtraction: false
             )
         }
 
@@ -23,8 +25,9 @@ struct ServiceContainer {
             authService: MockAuthService(users: SeedData.users),
             leadService: MockLeadService(leads: SeedData.leads),
             notificationService: MockNotificationService(notifications: SeedData.notifications),
-            aiExtractionService: MockAIExtractionService(),
-            isUsingBackend: false
+            aiExtractionService: UnavailableAIExtractionService(),
+            isUsingBackend: false,
+            supportsAIExtraction: false
         )
     }
 }

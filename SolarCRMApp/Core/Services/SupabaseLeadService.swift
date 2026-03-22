@@ -14,15 +14,21 @@ actor SupabaseLeadService: LeadServicing {
             guard let session = await sessionStore.loadSession(), !session.isExpired else { return [] }
             let leadsDTO = try await get([LeadDTO].self, path: "/rest/v1/leads?select=*&order=updated_at.desc", token: session.accessToken)
             let historyDTO = (try? await get([LeadHistoryItemDTO].self, path: "/rest/v1/lead_status_history?select=*&order=changed_at.desc", token: session.accessToken)) ?? []
-
-            return leadsDTO.map { dto in
-                let history = historyDTO
-                    .filter { $0.lead_id == dto.id }
-                    .map { $0.toModel() }
-                return dto.toModel(history: history)
-            }
+            return mapLeads(leadsDTO, historyDTO: historyDTO)
         } catch {
             return []
+        }
+    }
+
+    func fetchLead(id: UUID) async -> Lead? {
+        do {
+            guard let session = await sessionStore.loadSession(), !session.isExpired else { return nil }
+            let leadsDTO = try await get([LeadDTO].self, path: "/rest/v1/leads?id=eq.\(id.uuidString)&select=*&limit=1", token: session.accessToken)
+            guard let leadDTO = leadsDTO.first else { return nil }
+            let historyDTO = (try? await get([LeadHistoryItemDTO].self, path: "/rest/v1/lead_status_history?lead_id=eq.\(id.uuidString)&select=*&order=changed_at.desc", token: session.accessToken)) ?? []
+            return leadDTO.toModel(history: historyDTO.map { $0.toModel() })
+        } catch {
+            return nil
         }
     }
 
@@ -54,6 +60,15 @@ actor SupabaseLeadService: LeadServicing {
         let payload = history.map { LeadHistoryItemDTO(model: $0, leadID: leadID) }
         guard !payload.isEmpty else { return }
         _ = try await post(payload, path: "/rest/v1/lead_status_history?on_conflict=id", token: token, preferRepresentation: false, resolution: "merge-duplicates") as NoContentResponse
+    }
+
+    private func mapLeads(_ leadsDTO: [LeadDTO], historyDTO: [LeadHistoryItemDTO]) -> [Lead] {
+        leadsDTO.map { dto in
+            let history = historyDTO
+                .filter { $0.lead_id == dto.id }
+                .map { $0.toModel() }
+            return dto.toModel(history: history)
+        }
     }
 
     private func get<T: Decodable>(_ type: T.Type, path: String, token: String) async throws -> T {

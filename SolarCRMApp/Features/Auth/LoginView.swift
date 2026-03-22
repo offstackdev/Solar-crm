@@ -69,31 +69,7 @@ struct LoginView: View {
                             }
                             .disabled(isLoading || email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
-                            HStack {
-                                Rectangle().fill(Color.secondary.opacity(0.2)).frame(height: 1)
-                                Text("or continue with")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Rectangle().fill(Color.secondary.opacity(0.2)).frame(height: 1)
-                            }
-
-                            VStack(spacing: 12) {
-                                AuthProviderButton(
-                                    title: "Continue with Apple",
-                                    systemImage: "apple.logo"
-                                ) {
-                                    Task { await signInWithProvider(.doorKnocker) }
-                                }
-
-                                AuthProviderButton(
-                                    title: "Continue with Google",
-                                    systemImage: "globe"
-                                ) {
-                                    Task { await signInWithProvider(.closer) }
-                                }
-                            }
-
-                            Text("Your dashboard is assigned by your team role after authentication.")
+                            Text("Email and password are the only supported sign-in credentials right now. Apple and Google sign-in are not wired to the live backend yet.")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
 
@@ -158,18 +134,6 @@ struct LoginView: View {
         }
     }
 
-    private func signInWithProvider(_ fallbackRole: UserRole) async {
-        isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
-
-        do {
-            try await appState.login(role: fallbackRole)
-        } catch {
-            errorMessage = "Mock social sign-in is unavailable right now."
-        }
-    }
-
     private func signInAsRole(_ role: UserRole) async {
         isLoading = true
         errorMessage = nil
@@ -215,26 +179,5 @@ private struct AuthSecureField: View {
         }
         .padding()
         .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-}
-
-private struct AuthProviderButton: View {
-    let title: String
-    let systemImage: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack {
-                Image(systemName: systemImage)
-                Text(title)
-                    .fontWeight(.semibold)
-                Spacer()
-            }
-            .padding()
-            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .foregroundStyle(.primary)
-        }
-        .buttonStyle(.plain)
     }
 }
