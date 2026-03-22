@@ -152,7 +152,7 @@ async function performOCR(imageBytes: Uint8Array, mimeType: string): Promise<str
         {
           role: "system",
           content:
-            "You are an OCR engine for solar sales field notes. Transcribe visible text faithfully. Do not summarize, infer, or correct unclear text. Preserve numbers, phone digits, addresses, and line breaks whenever possible. Return only plain text.",
+            "You are an OCR engine for handwritten solar sales field notes. Transcribe visible text faithfully from notebook pages, even when labels are misspelled, handwriting is messy, or values are crossed out and rewritten. Do not summarize. Do not normalize spelling unless the text is unmistakable. Preserve numbers, phone digits, dollar amounts, addresses, labels, and line breaks whenever possible. If a value is crossed out and a replacement value is clearly written nearby, include the final visible value and mention the crossed-out text in parentheses on the same line. Return only plain text.",
         },
         {
           role: "user",
@@ -160,7 +160,7 @@ async function performOCR(imageBytes: Uint8Array, mimeType: string): Promise<str
             {
               type: "text",
               text:
-                "Read this note image and return a plain text transcription of the homeowner name, phone, property address, city, state, ZIP, utility, appointment details, and any extra notes. Preserve line breaks when useful. If handwriting is unclear, keep the uncertain text rather than rewriting it.",
+                "Read this handwritten field note and return a plain text transcription. Pay special attention to labels like address, homeowner, phone number, utility, average bill, roof, shading, and extra notes, even if the labels are misspelled or partially cut off. Preserve line breaks and keep the wording close to what is written. Do not drop values just because city, state, ZIP, or utility are missing.",
             },
             {
               type: "image_url",
@@ -175,7 +175,7 @@ async function performOCR(imageBytes: Uint8Array, mimeType: string): Promise<str
     }),
   });
 
-  const payload = await response.json();
+  const payload = await parseJSONResponse(response, "openai_ocr_response_invalid");
   if (!response.ok) {
     console.error("openai_ocr_failed", payload);
     throw new Error("OCR processing failed at the AI provider.");
@@ -207,7 +207,7 @@ async function parseLeadFields(rawText: string): Promise<{
         {
           role: "system",
           content:
-            "Convert OCR text from solar sales field notes into structured JSON. Never invent data. Use null for unknown values. Keep booleans null when the OCR does not support a confident yes or no. Split the address carefully into street address, city, state, and ZIP when the OCR provides enough evidence. Return exactly one JSON object with keys draft and fieldConfidences.",
+            "Convert OCR text from handwritten solar sales field notes into structured JSON. Never invent data. Use null for unknown values. Keep booleans null when the OCR does not support a confident yes or no. Split the address carefully into street address, city, state, and ZIP only when the OCR provides enough evidence. Accept partial lead notes where only street address, homeowner name, phone number, bill amount, and short notes are present. Return exactly one JSON object with keys draft and fieldConfidences.",
         },
         {
           role: "user",
@@ -246,8 +246,12 @@ Use notes to capture meaningful context that does not fit another field.
 If the transcript contains a full address on one line, split it into propertyAddress, city, state, and zipCode instead of copying the whole line into propertyAddress.
 Do not put city, state, or ZIP inside propertyAddress unless you truly cannot separate them.
 Treat labeled variants like "Address", "Service Address", "Property Address", or "Job Address" as the property address.
+Treat obvious handwritten variants like "Adress", "Adrass", "Home owner", "Phone number", "Phone numbev", or "Avg bill" as valid labels.
 If the street address appears on one line and the city/state/ZIP appears on the next line, combine both lines before splitting the address fields.
 If the address is written without commas, still separate street, city, state, and ZIP when the ending state and ZIP are clear.
+If only a street address is present and city/state/ZIP are missing, keep the street address in propertyAddress and leave city/state/zipCode null.
+If the note contains a rewritten or crossed-out bill amount and a later visible amount, keep the final visible amount in averageElectricBill and place any ambiguity in notes.
+Put descriptive phrases like "south facing home" into notes unless they clearly fit a dedicated field.
 OCR transcript:
 ${rawText}`,
             },
@@ -257,7 +261,7 @@ ${rawText}`,
     }),
   });
 
-  const payload = await response.json();
+  const payload = await parseJSONResponse(response, "openai_parse_response_invalid");
   if (!response.ok) {
     console.error("openai_parse_failed", payload);
     throw new Error("Lead field parsing failed at the AI provider.");
@@ -567,4 +571,20 @@ function encodeBase64(bytes: Uint8Array) {
     binary += String.fromCharCode(byte);
   }
   return btoa(binary);
+}
+
+async function parseJSONResponse(response: Response, logKey: string) {
+  const responseText = await response.text();
+
+  if (!responseText.trim()) {
+    console.error(logKey, "empty_body");
+    throw new Error("The AI provider returned an empty response.");
+  }
+
+  try {
+    return JSON.parse(responseText);
+  } catch (error) {
+    console.error(logKey, response.status, responseText, error);
+    throw new Error("The AI provider returned an unreadable response.");
+  }
 }

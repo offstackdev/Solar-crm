@@ -22,6 +22,7 @@ actor SupabaseAIExtractionService: AILeadExtracting {
     private let sessionStore: SessionStoring
     private let bucketName = "lead-intake-images"
     private let functionName = "lead-image-intake"
+    private let maxRetryCount = 2
 
     init(configuration: BackendConfiguration, sessionStore: SessionStoring) {
         self.configuration = configuration
@@ -84,7 +85,7 @@ actor SupabaseAIExtractionService: AILeadExtracting {
         request.setValue("3600", forHTTPHeaderField: "Cache-Control")
         request.setValue("false", forHTTPHeaderField: "x-upsert")
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await performData(for: request, operationName: "image upload")
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIClientError.invalidResponse
         }
@@ -111,7 +112,7 @@ actor SupabaseAIExtractionService: AILeadExtracting {
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await performData(for: request, operationName: "OCR request")
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIClientError.invalidResponse
         }
@@ -128,7 +129,25 @@ actor SupabaseAIExtractionService: AILeadExtracting {
             throw BackendServiceError.requestFailed("OCR processing failed with status \(httpResponse.statusCode).")
         }
 
-        return try JSONDecoder().decode(ExtractionResponse.self, from: data)
+        if let decoded = try? JSONDecoder().decode(ExtractionResponse.self, from: data) {
+            return decoded
+        }
+
+        if let errorPayload = try? JSONDecoder().decode(FunctionErrorResponse.self, from: data) {
+            throw BackendServiceError.requestFailed(errorPayload.error)
+        }
+
+        if let manualResponse = tryDecodeExtractionResponse(from: data) {
+            return manualResponse
+        }
+
+        if let message = String(data: data, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+           !message.isEmpty {
+            throw BackendServiceError.requestFailed("Image intake returned an unreadable response: \(message)")
+        }
+
+        throw BackendServiceError.requestFailed("Image intake returned an unreadable empty response.")
     }
 
     private func buildObjectPath(for userID: UUID, fileName: String, mimeType: String) -> String {
@@ -152,6 +171,132 @@ actor SupabaseAIExtractionService: AILeadExtracting {
             return "webp"
         default:
             return "jpg"
+        }
+    }
+
+    private func performData(for request: URLRequest, operationName: String) async throws -> (Data, URLResponse) {
+        var attempt = 0
+
+        while true {
+            do {
+                return try await URLSession.shared.data(for: request)
+            } catch {
+                attempt += 1
+
+                guard shouldRetry(error: error), attempt <= maxRetryCount else {
+                    throw mapTransportError(error, operationName: operationName)
+                }
+
+                try? await Task.sleep(for: .milliseconds(350 * attempt))
+            }
+        }
+    }
+
+    private func shouldRetry(error: Error) -> Bool {
+        guard let urlError = error as? URLError else { return false }
+
+        switch urlError.code {
+        case .networkConnectionLost, .timedOut, .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed, .notConnectedToInternet:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func mapTransportError(_ error: Error, operationName: String) -> Error {
+        guard let urlError = error as? URLError else { return error }
+
+        switch urlError.code {
+        case .networkConnectionLost, .timedOut, .notConnectedToInternet:
+            return BackendServiceError.requestFailed("The \(operationName) was interrupted before Supabase finished responding. Check the connection and try the import again.")
+        case .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed:
+            return BackendServiceError.requestFailed("Solar CRM could not reach the Supabase backend for the \(operationName). Confirm the device network and try again.")
+        case .userAuthenticationRequired:
+            return BackendServiceError.requestFailed("Your session needs to be refreshed before importing an image. Sign in again and retry.")
+        default:
+            return BackendServiceError.requestFailed(urlError.localizedDescription)
+        }
+    }
+
+    private func tryDecodeExtractionResponse(from data: Data) -> ExtractionResponse? {
+        guard
+            let jsonObject = try? JSONSerialization.jsonObject(with: data),
+            let payload = jsonObject as? [String: Any],
+            let draftPayload = payload["draft"] as? [String: Any]
+        else {
+            return nil
+        }
+
+        let fieldConfidencePayloads = (payload["fieldConfidences"] as? [[String: Any]] ?? []).compactMap {
+            item -> ExtractionResponse.FieldConfidencePayload? in
+            guard
+                let fieldName = item["fieldName"] as? String,
+                let confidence = item["confidence"] as? NSNumber
+            else {
+                return nil
+            }
+
+            return ExtractionResponse.FieldConfidencePayload(
+                fieldName: fieldName,
+                confidence: confidence.doubleValue
+            )
+        }
+
+        let rawText = coerceString(payload["rawText"]) ?? coerceString(payload["raw_text"]) ?? ""
+
+        return ExtractionResponse(
+            draft: .init(
+                homeownerFullName: coerceString(draftPayload["homeownerFullName"]),
+                phoneNumber: coerceString(draftPayload["phoneNumber"]),
+                email: coerceString(draftPayload["email"]),
+                propertyAddress: coerceString(draftPayload["propertyAddress"]),
+                city: coerceString(draftPayload["city"]),
+                state: coerceString(draftPayload["state"]),
+                zipCode: coerceString(draftPayload["zipCode"]),
+                utilityCompany: coerceString(draftPayload["utilityCompany"]),
+                notes: coerceString(draftPayload["notes"]),
+                homeownerType: coerceString(draftPayload["homeownerType"]),
+                averageElectricBill: coerceString(draftPayload["averageElectricBill"]),
+                roofType: coerceString(draftPayload["roofType"]),
+                shadingNotes: coerceString(draftPayload["shadingNotes"]),
+                decisionMakerPresent: coerceBool(draftPayload["decisionMakerPresent"]),
+                spousePresentRequired: coerceBool(draftPayload["spousePresentRequired"]),
+                languagePreference: coerceString(draftPayload["languagePreference"])
+            ),
+            fieldConfidences: fieldConfidencePayloads,
+            rawText: rawText
+        )
+    }
+
+    private func coerceString(_ value: Any?) -> String? {
+        switch value {
+        case let string as String:
+            let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        case let number as NSNumber:
+            return number.stringValue
+        default:
+            return nil
+        }
+    }
+
+    private func coerceBool(_ value: Any?) -> Bool? {
+        switch value {
+        case let bool as Bool:
+            return bool
+        case let number as NSNumber:
+            return number.boolValue
+        case let string as String:
+            switch string.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+            case "true", "yes", "1":
+                return true
+            case "false", "no", "0":
+                return false
+            default:
+                return nil
+            }
+        default:
+            return nil
         }
     }
 }
