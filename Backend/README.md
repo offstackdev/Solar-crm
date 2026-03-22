@@ -12,3 +12,9 @@ Planned service boundaries:
 - `leads`: create, list, update status, assign closer
 - `notifications`: in-app inbox records
 - `ai intake`: upload note image to storage, OCR/LLM parse via edge function, return extraction payload for review
+
+Current intake implementation contract:
+- private storage bucket: `lead-intake-images`
+- edge function: `lead-image-intake`
+- external AI secret required in Supabase Edge Functions: `OPENAI_API_KEY`
+- current auth posture: gateway `verify_jwt` is disabled and the function enforces bearer-token auth, `app_users` presence, `door_knocker` role, and user-owned storage paths inside the handler

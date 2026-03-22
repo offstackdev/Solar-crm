@@ -15,9 +15,9 @@ struct ServiceContainer {
                 authService: SupabaseAuthService(configuration: configuration, sessionStore: sessionStore),
                 leadService: SupabaseLeadService(configuration: configuration, sessionStore: sessionStore),
                 notificationService: SupabaseNotificationService(configuration: configuration, sessionStore: sessionStore),
-                aiExtractionService: UnavailableAIExtractionService(),
+                aiExtractionService: SupabaseAIExtractionService(configuration: configuration, sessionStore: sessionStore),
                 isUsingBackend: true,
-                supportsAIExtraction: false
+                supportsAIExtraction: true
             )
         }
 

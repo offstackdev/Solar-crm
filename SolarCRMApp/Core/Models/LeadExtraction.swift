@@ -5,6 +5,45 @@ struct LeadExtraction: Equatable {
         let id = UUID()
         let fieldName: String
         let confidence: Double
+
+        var displayName: String {
+            switch fieldName {
+            case "homeownerFullName":
+                return "Homeowner Name"
+            case "phoneNumber":
+                return "Phone Number"
+            case "email":
+                return "Email"
+            case "propertyAddress":
+                return "Property Address"
+            case "city":
+                return "City"
+            case "state":
+                return "State"
+            case "zipCode":
+                return "ZIP Code"
+            case "utilityCompany":
+                return "Utility Company"
+            case "notes":
+                return "Notes"
+            case "homeownerType":
+                return "Homeowner Type"
+            case "averageElectricBill":
+                return "Average Electric Bill"
+            case "roofType":
+                return "Roof Type"
+            case "shadingNotes":
+                return "Shading Notes"
+            case "decisionMakerPresent":
+                return "Decision Maker Present"
+            case "spousePresentRequired":
+                return "Spouse Present Required"
+            case "languagePreference":
+                return "Language Preference"
+            default:
+                return fieldName
+            }
+        }
     }
 
     var draft: LeadFormDraft

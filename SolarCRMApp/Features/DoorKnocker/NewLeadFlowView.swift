@@ -1,5 +1,6 @@
 import PhotosUI
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct NewLeadFlowView: View {
     @EnvironmentObject private var appState: AppState
@@ -7,7 +8,6 @@ struct NewLeadFlowView: View {
     @State private var draft = LeadFormDraft()
     @State private var extraction: LeadExtraction?
     @State private var selectedItem: PhotosPickerItem?
-    @State private var selectedImageName = ""
     @State private var showReviewScreen = false
     @State private var isExtracting = false
     @State private var extractionError: String?
@@ -109,14 +109,29 @@ struct NewLeadFlowView: View {
         defer { isExtracting = false }
 
         do {
-            selectedImageName = "field-notes-\(UUID().uuidString.prefix(6))"
-            let extracted = try await appState.extractLead(from: selectedImageName)
+            guard let item = selectedItem else {
+                throw BackendServiceError.requestFailed("Select an image before running AI intake.")
+            }
+
+            guard let imageData = try await item.loadTransferable(type: Data.self), !imageData.isEmpty else {
+                throw BackendServiceError.requestFailed("The selected image could not be read.")
+            }
+
+            let contentType = item.supportedContentTypes.first ?? .jpeg
+            let fileExtension = contentType.preferredFilenameExtension ?? "jpg"
+            let payload = LeadImagePayload(
+                data: imageData,
+                fileName: "field-notes-\(UUID().uuidString.prefix(6)).\(fileExtension)",
+                mimeType: contentType.preferredMIMEType ?? "image/jpeg"
+            )
+
+            let extracted = try await appState.extractLead(from: payload)
             extraction = extracted
             draft = extracted.draft
             showReviewScreen = true
             selectedItem = nil
         } catch {
-            extractionError = "AI extraction could not parse that image. Continue with manual entry instead."
+            extractionError = error.localizedDescription
             selectedItem = nil
         }
     }

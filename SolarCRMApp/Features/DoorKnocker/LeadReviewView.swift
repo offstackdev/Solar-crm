@@ -29,7 +29,7 @@ struct LeadReviewView: View {
                             .font(.subheadline.weight(.semibold))
                         ForEach(extraction.lowConfidenceFields) { field in
                             HStack {
-                                Text(field.fieldName)
+                                Text(field.displayName)
                                 Spacer()
                                 Text("\(Int(field.confidence * 100))%")
                                     .foregroundStyle(.orange)

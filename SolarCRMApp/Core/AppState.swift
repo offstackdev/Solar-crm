@@ -220,6 +220,43 @@ final class AppState: ObservableObject {
         }
     }
 
+    func updateLeadAppointment(leadID: UUID, appointmentDate: Date) async -> Bool {
+        guard let user = currentUser, var lead = leads.first(where: { $0.id == leadID }) else { return false }
+
+        let timestamp = Date()
+        let hadExistingAppointment = lead.appointmentDate != nil
+        lead.appointmentDate = appointmentDate
+        lead.updatedAt = timestamp
+
+        let note = hadExistingAppointment
+            ? "Door knocker updated the appointment time"
+            : "Door knocker added an appointment time"
+        lead.statusHistory.insert(
+            .init(
+                id: UUID(),
+                status: lead.currentStatus,
+                changedByUserID: user.id,
+                note: note,
+                changedAt: timestamp
+            ),
+            at: 0
+        )
+
+        _ = await services.leadService.updateLead(lead)
+        guard let _ = await verifyPersistedLead(
+            leadID: lead.id,
+            expectedStatus: lead.currentStatus,
+            expectedAssignedCloserID: lead.assignedCloserID,
+            expectedHistoryNotes: [note]
+        ) else {
+            await refreshLeadData()
+            return false
+        }
+
+        await refreshLeadData()
+        return true
+    }
+
     func requestReminder(for leadID: UUID) async -> ReminderRequestResult {
         guard
             let user = currentUser,
@@ -388,8 +425,8 @@ final class AppState: ObservableObject {
         notifications = await services.notificationService.fetchNotifications(for: notification.userID)
     }
 
-    func extractLead(from imagePayloadName: String) async throws -> LeadExtraction {
-        try await services.aiExtractionService.extractLead(from: imagePayloadName)
+    func extractLead(from image: LeadImagePayload) async throws -> LeadExtraction {
+        try await services.aiExtractionService.extractLead(from: image)
     }
 
     private func sendNotification(userID: UUID, leadID: UUID?, kind: NotificationKind, title: String, message: String) async -> NotificationDeliveryResult {
