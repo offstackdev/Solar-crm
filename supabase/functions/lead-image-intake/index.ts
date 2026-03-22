@@ -10,10 +10,11 @@ const PARSER_MODEL = Deno.env.get("OPENAI_PARSER_MODEL") ?? OCR_MODEL;
 const INTAKE_BUCKET = Deno.env.get("LEAD_INTAKE_BUCKET") ?? "lead-intake-images";
 
 type IntakeRequest = {
-  bucket: string;
-  objectPath: string;
+  bucket?: string;
+  objectPath?: string;
   fileName: string;
   mimeType: string;
+  inlineImageBase64?: string;
 };
 
 type ExtractionResponse = {
@@ -78,25 +79,10 @@ Deno.serve(async (req) => {
 
     const body = (await req.json()) as Partial<IntakeRequest>;
     const payload = validateRequest(body);
+    const imageBytes = payload.inlineImageBase64
+      ? decodeBase64(payload.inlineImageBase64)
+      : await downloadStoredImage(adminClient, payload, user.id);
 
-    if (payload.bucket != INTAKE_BUCKET) {
-      return respond(400, { error: `Bucket ${payload.bucket} is not allowed for intake.` });
-    }
-
-    if (!payload.objectPath.startsWith(`${user.id}/`)) {
-      return respond(403, { error: "You can only process images uploaded under your own intake path." });
-    }
-
-    const { data: objectBlob, error: downloadError } = await adminClient.storage
-      .from(payload.bucket)
-      .download(payload.objectPath);
-
-    if (downloadError || !objectBlob) {
-      console.error("storage_download_failed", downloadError);
-      return respond(404, { error: "The uploaded intake image could not be downloaded." });
-    }
-
-    const imageBytes = new Uint8Array(await objectBlob.arrayBuffer());
     const rawText = (await performOCR(imageBytes, payload.mimeType)).trim();
     if (!rawText) {
       return respond(422, { error: "OCR could not find readable lead details in that image." });
@@ -121,12 +107,19 @@ Deno.serve(async (req) => {
 });
 
 function validateRequest(payload: Partial<IntakeRequest>): IntakeRequest {
-  if (!payload.bucket || !payload.objectPath || !payload.fileName || !payload.mimeType) {
-    throw new Error("bucket, objectPath, fileName, and mimeType are required.");
+  if (!payload.fileName || !payload.mimeType) {
+    throw new Error("fileName and mimeType are required.");
   }
 
   if (!payload.mimeType.startsWith("image/")) {
     throw new Error("Only image uploads can be processed.");
+  }
+
+  const hasInlineImage = typeof payload.inlineImageBase64 === "string" && payload.inlineImageBase64.trim().length > 0;
+  const hasStoredObject = typeof payload.bucket === "string" && typeof payload.objectPath === "string";
+
+  if (!hasInlineImage && !hasStoredObject) {
+    throw new Error("Provide either bucket/objectPath or inlineImageBase64.");
   }
 
   return {
@@ -134,7 +127,37 @@ function validateRequest(payload: Partial<IntakeRequest>): IntakeRequest {
     objectPath: payload.objectPath,
     fileName: payload.fileName,
     mimeType: payload.mimeType,
+    inlineImageBase64: payload.inlineImageBase64,
   };
+}
+
+async function downloadStoredImage(
+  adminClient: ReturnType<typeof createClient>,
+  payload: IntakeRequest,
+  userID: string,
+) {
+  if (!payload.bucket || !payload.objectPath) {
+    throw new Error("Stored image requests require bucket and objectPath.");
+  }
+
+  if (payload.bucket != INTAKE_BUCKET) {
+    throw new Error(`Bucket ${payload.bucket} is not allowed for intake.`);
+  }
+
+  if (!payload.objectPath.startsWith(`${userID}/`)) {
+    throw new Error("You can only process images uploaded under your own intake path.");
+  }
+
+  const { data: objectBlob, error: downloadError } = await adminClient.storage
+    .from(payload.bucket)
+    .download(payload.objectPath);
+
+  if (downloadError || !objectBlob) {
+    console.error("storage_download_failed", downloadError);
+    throw new Error("The uploaded intake image could not be downloaded.");
+  }
+
+  return new Uint8Array(await objectBlob.arrayBuffer());
 }
 
 async function performOCR(imageBytes: Uint8Array, mimeType: string): Promise<string> {
@@ -571,6 +594,16 @@ function encodeBase64(bytes: Uint8Array) {
     binary += String.fromCharCode(byte);
   }
   return btoa(binary);
+}
+
+function decodeBase64(value: string) {
+  try {
+    const binary = atob(value);
+    return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  } catch (error) {
+    console.error("inline_image_decode_failed", error);
+    throw new Error("The inline image payload could not be decoded.");
+  }
 }
 
 async function parseJSONResponse(response: Response, logKey: string) {

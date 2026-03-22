@@ -34,12 +34,37 @@ actor SupabaseAIExtractionService: AILeadExtracting {
             throw BackendServiceError.requestFailed("Your session expired. Sign in again before importing an image.")
         }
 
-        let objectPath = buildObjectPath(for: session.userID, fileName: image.fileName, mimeType: image.mimeType)
-        try await upload(image: image, objectPath: objectPath, token: session.accessToken)
-        let response = try await invokeExtraction(
-            request: ExtractionRequest(bucket: bucketName, objectPath: objectPath, fileName: image.fileName, mimeType: image.mimeType),
-            token: session.accessToken
-        )
+        let response: ExtractionResponse
+
+        do {
+            let objectPath = buildObjectPath(for: session.userID, fileName: image.fileName, mimeType: image.mimeType)
+            try await upload(image: image, objectPath: objectPath, token: session.accessToken)
+            response = try await invokeExtraction(
+                request: ExtractionRequest(
+                    bucket: bucketName,
+                    objectPath: objectPath,
+                    fileName: image.fileName,
+                    mimeType: image.mimeType,
+                    inlineImageBase64: nil
+                ),
+                token: session.accessToken
+            )
+        } catch {
+            guard shouldFallbackToInlineUpload(after: error) else {
+                throw error
+            }
+
+            response = try await invokeExtraction(
+                request: ExtractionRequest(
+                    bucket: nil,
+                    objectPath: nil,
+                    fileName: image.fileName,
+                    mimeType: image.mimeType,
+                    inlineImageBase64: image.data.base64EncodedString()
+                ),
+                token: session.accessToken
+            )
+        }
 
         let draft = LeadFormDraft(
             homeownerFullName: response.draft.homeownerFullName ?? "",
@@ -218,6 +243,27 @@ actor SupabaseAIExtractionService: AILeadExtracting {
         }
     }
 
+    private func shouldFallbackToInlineUpload(after error: Error) -> Bool {
+        if let urlError = error as? URLError {
+            switch urlError.code {
+            case .cannotParseResponse, .networkConnectionLost, .timedOut, .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed:
+                return true
+            default:
+                break
+            }
+        }
+
+        if let serviceError = error as? BackendServiceError,
+           case .requestFailed(let message) = serviceError {
+            let normalized = message.lowercased()
+            return normalized.contains("cannot parse response")
+                || normalized.contains("interrupted before supabase finished responding")
+                || normalized.contains("could not reach the supabase backend")
+        }
+
+        return false
+    }
+
     private func tryDecodeExtractionResponse(from data: Data) -> ExtractionResponse? {
         guard
             let jsonObject = try? JSONSerialization.jsonObject(with: data),
@@ -302,10 +348,11 @@ actor SupabaseAIExtractionService: AILeadExtracting {
 }
 
 private struct ExtractionRequest: Encodable {
-    let bucket: String
-    let objectPath: String
+    let bucket: String?
+    let objectPath: String?
     let fileName: String
     let mimeType: String
+    let inlineImageBase64: String?
 }
 
 private struct ExtractionResponse: Decodable {
