@@ -19,7 +19,7 @@ struct AssignmentManagerView: View {
                 }
 
                 Section("Lead Reassignment") {
-                    ForEach(appState.leads) { lead in
+                    ForEach(appState.leads.sorted { $0.updatedAt > $1.updatedAt }) { lead in
                         ManagerLeadAssignmentRow(lead: lead)
                     }
                 }
@@ -33,14 +33,27 @@ struct ManagerLeadAssignmentRow: View {
     @EnvironmentObject private var appState: AppState
     let lead: Lead
     @State private var selectedCloserID: UUID?
+    @State private var message: String?
+    @State private var isSaving = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(lead.homeownerFullName)
-                .font(.headline)
-            Text(lead.propertyAddress)
-                .font(.subheadline)
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(lead.homeownerFullName)
+                        .font(.headline)
+                    Text(lead.propertyAddress)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                StatusBadge(status: lead.currentStatus)
+            }
+
+            Text("Door knocker: \(appState.userName(for: lead.createdByDoorKnockerID))")
+                .font(.caption)
                 .foregroundStyle(.secondary)
+
             Picker("Closer", selection: $selectedCloserID) {
                 ForEach(appState.users(for: .closer)) { closer in
                     Text(closer.fullName).tag(Optional(closer.id))
@@ -50,11 +63,30 @@ struct ManagerLeadAssignmentRow: View {
                 selectedCloserID = lead.assignedCloserID
             }
 
-            Button("Reassign Lead") {
+            Button {
                 guard let selectedCloserID else { return }
-                Task { await appState.reassign(leadID: lead.id, closerID: selectedCloserID) }
+                Task {
+                    isSaving = true
+                    await appState.reassign(leadID: lead.id, closerID: selectedCloserID)
+                    message = "Assigned to \(appState.userName(for: selectedCloserID))."
+                    isSaving = false
+                }
+            } label: {
+                HStack {
+                    if isSaving {
+                        ProgressView()
+                    }
+                    Text("Reassign Lead")
+                }
             }
             .buttonStyle(.bordered)
+            .disabled(isSaving || selectedCloserID == nil || selectedCloserID == lead.assignedCloserID)
+
+            if let message {
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.vertical, 6)
     }

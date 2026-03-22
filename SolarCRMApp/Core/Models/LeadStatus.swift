@@ -19,6 +19,10 @@ enum LeadStatus: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    init(backendValue: String) {
+        self = LeadStatus(rawValue: backendValue) ?? .submitted
+    }
+
     var isVisibleOnDoorKnockerActiveBoard: Bool {
         switch self {
         case .newLead, .needsVerification, .submitted, .pendingConfirmation, .appointmentCanceled, .appointmentRescheduled:

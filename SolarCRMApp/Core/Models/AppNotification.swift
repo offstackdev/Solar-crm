@@ -6,6 +6,16 @@ enum NotificationKind: String, Codable {
     case appointmentConfirmed
     case appointmentRescheduled
     case assignmentChanged
+
+    var symbolName: String {
+        switch self {
+        case .reminderRequest: return "bell.badge"
+        case .leadStatusUpdate: return "arrow.triangle.2.circlepath"
+        case .appointmentConfirmed: return "calendar.badge.checkmark"
+        case .appointmentRescheduled: return "calendar.badge.exclamationmark"
+        case .assignmentChanged: return "person.crop.circle.badge.checkmark"
+        }
+    }
 }
 
 struct AppNotification: Identifiable, Codable, Equatable {

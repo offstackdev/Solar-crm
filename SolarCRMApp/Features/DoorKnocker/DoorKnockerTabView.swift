@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct DoorKnockerTabView: View {
+    @EnvironmentObject private var appState: AppState
+
     var body: some View {
         TabView {
             DoorKnockerDashboardView()
@@ -12,6 +14,7 @@ struct DoorKnockerTabView: View {
                 .tabItem {
                     Label("Alerts", systemImage: "bell")
                 }
+                .badge(appState.unreadNotificationCount)
 
             ProfileView()
                 .tabItem {

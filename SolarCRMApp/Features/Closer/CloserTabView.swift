@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct CloserTabView: View {
+    @EnvironmentObject private var appState: AppState
+
     var body: some View {
         TabView {
             CloserDashboardView()
@@ -17,6 +19,7 @@ struct CloserTabView: View {
                 .tabItem {
                     Label("Alerts", systemImage: "bell")
                 }
+                .badge(appState.unreadNotificationCount)
 
             ProfileView()
                 .tabItem {

@@ -21,6 +21,13 @@ struct LoginView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         VStack(alignment: .leading, spacing: 10) {
+                            Text(appState.isUsingBackend ? "Supabase Mode" : "Mock Mode")
+                                .font(.caption.weight(.semibold))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(appState.isUsingBackend ? Color.green.opacity(0.2) : Color.orange.opacity(0.2), in: Capsule())
+                                .foregroundStyle(.white)
+
                             Text("Solar CRM")
                                 .font(.system(size: 42, weight: .bold, design: .rounded))
                                 .foregroundStyle(.white)
@@ -134,9 +141,20 @@ struct LoginView: View {
         defer { isLoading = false }
 
         do {
-            try await appState.login(email: email.trimmingCharacters(in: .whitespacesAndNewlines))
+            try await appState.login(
+                email: email.trimmingCharacters(in: .whitespacesAndNewlines),
+                password: password
+            )
         } catch {
-            errorMessage = "No mock user matches that email yet. Try `knocker1@suncrest.com`, `closer1@suncrest.com`, or `manager@suncrest.com`."
+            if let localizedError = error as? LocalizedError, let description = localizedError.errorDescription {
+                errorMessage = description
+            } else {
+                if appState.isUsingBackend {
+                    errorMessage = "Supabase sign-in failed: \(String(describing: error))"
+                } else {
+                    errorMessage = "No mock user matches that email yet. Try `knocker1@suncrest.com`, `closer1@suncrest.com`, or `manager@suncrest.com`."
+                }
+            }
         }
     }
 

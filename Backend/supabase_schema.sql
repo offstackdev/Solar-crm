@@ -115,8 +115,94 @@ using (
   )
 );
 
+create policy "Door knockers can update own leads"
+on leads for update
+using (
+  created_by_door_knocker_id = auth.uid()
+)
+with check (
+  created_by_door_knocker_id = auth.uid()
+);
+
 create policy "Assigned closers can update assigned leads"
 on leads for update
 using (
   assigned_closer_id = auth.uid()
+);
+
+create policy "Users can read related lead status history"
+on lead_status_history for select
+using (
+  exists (
+    select 1
+    from leads l
+    where l.id = lead_status_history.lead_id
+      and (
+        l.created_by_door_knocker_id = auth.uid()
+        or l.assigned_closer_id = auth.uid()
+        or exists (
+          select 1
+          from app_users u
+          where u.id = auth.uid()
+            and u.org_id = l.org_id
+            and u.role = 'manager'
+        )
+      )
+  )
+);
+
+create policy "Users can insert related lead status history"
+on lead_status_history for insert
+with check (
+  changed_by_user_id = auth.uid()
+  and exists (
+    select 1
+    from leads l
+    where l.id = lead_status_history.lead_id
+      and (
+        l.created_by_door_knocker_id = auth.uid()
+        or l.assigned_closer_id = auth.uid()
+        or exists (
+          select 1
+          from app_users u
+          where u.id = auth.uid()
+            and u.org_id = l.org_id
+            and u.role = 'manager'
+        )
+      )
+  )
+);
+
+create policy "Users can read own notifications"
+on app_notifications for select
+using (
+  user_id = auth.uid()
+);
+
+create policy "Managers can create org notifications"
+on app_notifications for insert
+with check (
+  exists (
+    select 1
+    from app_users actor
+    join app_users target on target.id = app_notifications.user_id
+    where actor.id = auth.uid()
+      and actor.role = 'manager'
+      and actor.org_id = target.org_id
+  )
+);
+
+create policy "Users can create notifications for themselves"
+on app_notifications for insert
+with check (
+  user_id = auth.uid()
+);
+
+create policy "Users can mark own notifications read"
+on app_notifications for update
+using (
+  user_id = auth.uid()
+)
+with check (
+  user_id = auth.uid()
 );

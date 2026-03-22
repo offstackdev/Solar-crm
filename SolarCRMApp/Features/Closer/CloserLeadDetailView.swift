@@ -66,8 +66,8 @@ struct CloserLeadDetailView: View {
                                     reminderMessage = "Reminder sent to \(appState.userName(for: lead.createdByDoorKnockerID))."
                                 case .alreadyPending:
                                     reminderMessage = "A reminder is already pending for this lead."
-                                case .failed:
-                                    reminderMessage = "Reminder could not be sent. Try again."
+                                case .failed(let message):
+                                    reminderMessage = message
                                 }
                             }
                         } label: {

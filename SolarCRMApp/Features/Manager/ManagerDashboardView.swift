@@ -7,8 +7,24 @@ struct ManagerDashboardView: View {
         appState.leads
     }
 
-    private var appointments: [Lead] {
-        allLeads.filter { $0.appointmentDate != nil }
+    private var needsConfirmation: [Lead] {
+        allLeads.filter { $0.currentStatus == .submitted || $0.currentStatus == .pendingConfirmation || $0.currentStatus == .appointmentRescheduled }
+    }
+
+    private var readyAppointments: [Lead] {
+        allLeads.filter { $0.currentStatus == .sentToCloser || $0.currentStatus == .onCloserSchedule }
+    }
+
+    private var runningAppointments: [Lead] {
+        allLeads.filter { $0.currentStatus == .appointmentRun }
+    }
+
+    private var completed: [Lead] {
+        allLeads.filter { $0.currentStatus.isCompletedCloserOutcome }
+    }
+
+    private var recentLeads: [Lead] {
+        allLeads.sorted { $0.updatedAt > $1.updatedAt }.prefix(8).map { $0 }
     }
 
     var body: some View {
@@ -21,12 +37,17 @@ struct ManagerDashboardView: View {
                     VStack(alignment: .leading, spacing: 20) {
                         HStack(spacing: 12) {
                             MetricCard(title: "Total Leads", value: "\(allLeads.count)", systemImage: "tray.full")
-                            MetricCard(title: "Closed", value: "\(allLeads.filter { $0.currentStatus == .closed }.count)", systemImage: "checkmark.seal")
+                            MetricCard(title: "Needs Confirmation", value: "\(needsConfirmation.count)", systemImage: "phone.badge.waveform")
                         }
 
                         HStack(spacing: 12) {
+                            MetricCard(title: "Ready Appointments", value: "\(readyAppointments.count)", systemImage: "calendar")
+                            MetricCard(title: "Running", value: "\(runningAppointments.count)", systemImage: "figure.walk.motion")
+                        }
+
+                        HStack(spacing: 12) {
+                            MetricCard(title: "Completed", value: "\(completed.count)", systemImage: "checkmark.seal")
                             MetricCard(title: "Needs Follow-Up", value: "\(allLeads.filter { $0.currentStatus == .needsFollowUp }.count)", systemImage: "arrow.triangle.2.circlepath")
-                            MetricCard(title: "Appointments", value: "\(appointments.count)", systemImage: "calendar")
                         }
 
                         VStack(alignment: .leading, spacing: 12) {
@@ -45,9 +66,31 @@ struct ManagerDashboardView: View {
                         }
 
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("All Leads")
+                            Text("Closer Load")
                                 .font(.title3.bold())
-                            ForEach(allLeads) { lead in
+                            ForEach(appState.users(for: .closer)) { closer in
+                                let closerLeads = allLeads.filter { $0.assignedCloserID == closer.id }
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(closer.fullName)
+                                            .font(.headline)
+                                        Text("\(closerLeads.filter { $0.currentStatus == .onCloserSchedule || $0.currentStatus == .sentToCloser }.count) ready, \(closerLeads.filter { $0.currentStatus.isCompletedCloserOutcome }.count) completed")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Text("\(closerLeads.count)")
+                                        .font(.title3.bold())
+                                }
+                                .padding()
+                                .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            }
+                        }
+
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Recent Lead Activity")
+                                .font(.title3.bold())
+                            ForEach(recentLeads) { lead in
                                 NavigationLink {
                                     ManagerLeadDetailView(leadID: lead.id)
                                 } label: {

@@ -4,7 +4,7 @@ import SwiftUI
 enum ReminderRequestResult {
     case sent
     case alreadyPending
-    case failed
+    case failed(String)
 }
 
 @MainActor
@@ -17,31 +17,42 @@ final class AppState: ObservableObject {
 
     let services: ServiceContainer
 
+    var isUsingBackend: Bool {
+        services.isUsingBackend
+    }
+
+    var unreadNotificationCount: Int {
+        notifications.filter { !$0.isRead }.count
+    }
+
     init(services: ServiceContainer) {
         self.services = services
     }
 
     static func bootstrap() -> AppState {
-        let services = ServiceContainer(
-            authService: MockAuthService(users: SeedData.users),
-            leadService: MockLeadService(leads: SeedData.leads),
-            notificationService: MockNotificationService(notifications: SeedData.notifications),
-            aiExtractionService: MockAIExtractionService()
-        )
-        return AppState(services: services)
+        AppState(services: ServiceContainer.bootstrap())
     }
 
     func loadSeedDataIfNeeded() async {
         guard !isLoaded else { return }
-        users = await services.authService.availableUsers()
-        leads = await services.leadService.fetchLeads()
+        if currentUser == nil, let restoredUser = try? await services.authService.restoreSessionUser() {
+            currentUser = restoredUser
+            users = await services.authService.availableUsers()
+            await refreshLeadData()
+        } else {
+            users = await services.authService.availableUsers()
+        }
+        if currentUser == nil {
+            leads = await services.leadService.fetchLeads()
+        }
         isLoaded = true
     }
 
-    func login(email: String = "", role: UserRole? = nil) async throws {
-        let user = try await services.authService.login(email: email, role: role)
+    func login(email: String = "", password: String? = nil, role: UserRole? = nil) async throws {
+        let user = try await services.authService.login(email: email, password: password, role: role)
         currentUser = user
-        notifications = await services.notificationService.fetchNotifications(for: user.id)
+        users = await services.authService.availableUsers()
+        await refreshLeadData()
     }
 
     func logout() async {
@@ -96,6 +107,17 @@ final class AppState: ObservableObject {
         )
 
         _ = await services.leadService.saveLead(lead)
+
+        if let manager = users.first(where: { $0.role == .manager && $0.orgID == currentUser.orgID }) {
+            await sendNotification(
+                userID: manager.id,
+                leadID: lead.id,
+                kind: .leadStatusUpdate,
+                title: "New lead created",
+                message: "\(lead.homeownerFullName) was submitted by \(currentUser.fullName) with status \(initialStatus.rawValue)."
+            )
+        }
+
         await refreshLeadData()
         return true
     }
@@ -117,6 +139,7 @@ final class AppState: ObservableObject {
         }
 
         _ = await services.leadService.updateLead(lead)
+        await markNotificationsRead(for: lead.id, kind: .reminderRequest, userID: lead.createdByDoorKnockerID)
         await refreshLeadData()
 
         if let closerID = lead.assignedCloserID, user.role == .doorKnocker, status == .appointmentConfirmed {
@@ -128,6 +151,42 @@ final class AppState: ObservableObject {
                 message: "\(lead.homeownerFullName) is confirmed and ready for your schedule."
             )
         }
+
+        if user.role == .doorKnocker, status == .appointmentConfirmed {
+            await sendNotification(
+                userID: lead.createdByDoorKnockerID,
+                leadID: lead.id,
+                kind: .leadStatusUpdate,
+                title: "Lead handed off to closer",
+                message: "\(lead.homeownerFullName) moved out of your active queue and onto the closer schedule."
+            )
+        }
+
+        if status == .appointmentCanceled {
+            if let closerID = lead.assignedCloserID {
+                await sendNotification(
+                    userID: closerID,
+                    leadID: lead.id,
+                    kind: .leadStatusUpdate,
+                    title: "Appointment canceled",
+                    message: "\(lead.homeownerFullName) was canceled by the door knocker."
+                )
+            }
+            await markNotificationsRead(for: lead.id, kind: .reminderRequest, userID: lead.createdByDoorKnockerID)
+        }
+
+        if status == .appointmentRescheduled {
+            if let closerID = lead.assignedCloserID {
+                await sendNotification(
+                    userID: closerID,
+                    leadID: lead.id,
+                    kind: .appointmentRescheduled,
+                    title: "Appointment rescheduled",
+                    message: "\(lead.homeownerFullName) needs a new confirmed time from the door knocker."
+                )
+            }
+            await markNotificationsRead(for: lead.id, kind: .reminderRequest, userID: lead.createdByDoorKnockerID)
+        }
     }
 
     func requestReminder(for leadID: UUID) async -> ReminderRequestResult {
@@ -135,7 +194,7 @@ final class AppState: ObservableObject {
             let user = currentUser,
             var lead = leads.first(where: { $0.id == leadID }),
             let doorKnocker = users.first(where: { $0.id == lead.createdByDoorKnockerID })
-        else { return .failed }
+        else { return .failed("The assigned door knocker could not be found in the org user roster.") }
 
         let existingNotifications = await services.notificationService.fetchNotifications(for: doorKnocker.id)
         let alreadyPending = existingNotifications.contains {
@@ -150,7 +209,7 @@ final class AppState: ObservableObject {
         lead.statusHistory.insert(.init(id: UUID(), status: lead.currentStatus, changedByUserID: user.id, note: "Closer requested reminder to confirm appointment", changedAt: Date()), at: 0)
         _ = await services.leadService.updateLead(lead)
 
-        await sendNotification(
+        let sendResult = await sendNotification(
             userID: doorKnocker.id,
             leadID: lead.id,
             kind: .reminderRequest,
@@ -158,7 +217,12 @@ final class AppState: ObservableObject {
             message: "\(user.fullName) asked you to re-confirm \(lead.homeownerFullName)'s appointment."
         )
         await refreshLeadData()
-        return .sent
+        switch sendResult {
+        case .success:
+            return .sent
+        case .failure(let message):
+            return .failed(message)
+        }
     }
 
     func updateCloserOutcome(leadID: UUID, outcome: LeadOutcome) async {
@@ -195,6 +259,16 @@ final class AppState: ObservableObject {
                 message: "\(lead.homeownerFullName) is now marked \(newStatus.rawValue)."
             )
         }
+
+        if let manager = users.first(where: { $0.role == .manager && $0.orgID == lead.orgID }) {
+            await sendNotification(
+                userID: manager.id,
+                leadID: lead.id,
+                kind: .leadStatusUpdate,
+                title: "Closer outcome recorded",
+                message: "\(lead.homeownerFullName) was updated to \(newStatus.rawValue) by \(user.fullName)."
+            )
+        }
     }
 
     func reassign(leadID: UUID, closerID: UUID) async {
@@ -210,6 +284,14 @@ final class AppState: ObservableObject {
             kind: .assignmentChanged,
             title: "Lead reassigned to you",
             message: "\(lead.homeownerFullName) is now assigned to you."
+        )
+
+        await sendNotification(
+            userID: lead.createdByDoorKnockerID,
+            leadID: lead.id,
+            kind: .assignmentChanged,
+            title: "Closer assignment changed",
+            message: "\(lead.homeownerFullName) is now assigned to \(userName(for: closerID))."
         )
         await refreshLeadData()
     }
@@ -244,7 +326,7 @@ final class AppState: ObservableObject {
         try await services.aiExtractionService.extractLead(from: imagePayloadName)
     }
 
-    private func sendNotification(userID: UUID, leadID: UUID?, kind: NotificationKind, title: String, message: String) async {
+    private func sendNotification(userID: UUID, leadID: UUID?, kind: NotificationKind, title: String, message: String) async -> NotificationDeliveryResult {
         let notification = AppNotification(
             id: UUID(),
             userID: userID,
@@ -255,6 +337,18 @@ final class AppState: ObservableObject {
             createdAt: Date(),
             isRead: false
         )
-        await services.notificationService.upsert(notification)
+        return await services.notificationService.upsert(notification)
     }
+
+    private func markNotificationsRead(for leadID: UUID, kind: NotificationKind, userID: UUID) async {
+        let existingNotifications = await services.notificationService.fetchNotifications(for: userID)
+        for notification in existingNotifications where notification.leadID == leadID && notification.kind == kind && !notification.isRead {
+            await services.notificationService.markRead(notificationID: notification.id)
+        }
+    }
+}
+
+enum NotificationDeliveryResult {
+    case success
+    case failure(String)
 }

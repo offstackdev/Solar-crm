@@ -22,4 +22,13 @@ enum UserRole: String, Codable, CaseIterable, Identifiable {
         case .manager: return "rectangle.3.group.bubble.left"
         }
     }
+
+    init?(backendValue: String) {
+        switch backendValue {
+        case "door_knocker": self = .doorKnocker
+        case "closer": self = .closer
+        case "manager": self = .manager
+        default: return nil
+        }
+    }
 }

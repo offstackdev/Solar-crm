@@ -8,4 +8,8 @@ enum LeadSource: String, Codable, CaseIterable, Identifiable {
     case imageIntake = "Image Intake"
 
     var id: String { rawValue }
+
+    init(backendValue: String) {
+        self = LeadSource(rawValue: backendValue) ?? .canvassing
+    }
 }
