@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
 
     const extraction = await parseLeadFields(rawText);
     const response: ExtractionResponse = {
-      draft: normalizeDraft(extraction.draft),
+      draft: normalizeDraft(extraction.draft, rawText),
       fieldConfidences: normalizeFieldConfidences(extraction.fieldConfidences),
       rawText,
     };
@@ -245,6 +245,9 @@ Confidence must be between 0 and 1.
 Use notes to capture meaningful context that does not fit another field.
 If the transcript contains a full address on one line, split it into propertyAddress, city, state, and zipCode instead of copying the whole line into propertyAddress.
 Do not put city, state, or ZIP inside propertyAddress unless you truly cannot separate them.
+Treat labeled variants like "Address", "Service Address", "Property Address", or "Job Address" as the property address.
+If the street address appears on one line and the city/state/ZIP appears on the next line, combine both lines before splitting the address fields.
+If the address is written without commas, still separate street, city, state, and ZIP when the ending state and ZIP are clear.
 OCR transcript:
 ${rawText}`,
             },
@@ -296,7 +299,7 @@ ${rawText}`,
   };
 }
 
-function normalizeDraft(draft: Record<string, string | boolean | null>) {
+function normalizeDraft(draft: Record<string, string | boolean | null>, rawText: string) {
   const normalized = {
     homeownerFullName: normalizeString(draft.homeownerFullName),
     phoneNumber: normalizeString(draft.phoneNumber),
@@ -316,7 +319,7 @@ function normalizeDraft(draft: Record<string, string | boolean | null>) {
     languagePreference: normalizeString(draft.languagePreference),
   };
 
-  return normalizeAddressFields(normalized);
+  return normalizeAddressFields(normalized, rawText);
 }
 
 function normalizeFieldConfidences(fieldConfidences: Array<{ fieldName: string; confidence: number }>) {
@@ -328,7 +331,7 @@ function normalizeFieldConfidences(fieldConfidences: Array<{ fieldName: string; 
 
 function normalizeString(value: string | boolean | null | undefined) {
   if (typeof value !== "string") return null;
-  const trimmed = value.trim();
+  const trimmed = collapseWhitespace(value);
   return trimmed.length > 0 ? trimmed : null;
 }
 
@@ -354,43 +357,22 @@ function normalizeAddressFields(draft: {
   decisionMakerPresent: boolean | null;
   spousePresentRequired: boolean | null;
   languagePreference: string | null;
-}) {
-  if (!draft.propertyAddress) {
-    return draft;
+}, rawText: string) {
+  const candidate = extractAddressCandidate(draft.propertyAddress, rawText);
+  const parsedAddress = candidate ? parseAddressCandidate(candidate) : null;
+
+  if (parsedAddress?.propertyAddress) {
+    draft.propertyAddress = parsedAddress.propertyAddress;
+  } else if (draft.propertyAddress) {
+    draft.propertyAddress = collapseWhitespace(draft.propertyAddress);
   }
 
-  const fullAddress = draft.propertyAddress.replace(/\s+/g, " ").trim();
-  if (draft.city && draft.state && draft.zipCode) {
-    draft.propertyAddress = stripTrailingAddressParts(fullAddress, draft.city, draft.state, draft.zipCode);
-    return draft;
-  }
+  draft.city = draft.city ?? parsedAddress?.city ?? null;
+  draft.state = normalizeState(draft.state ?? parsedAddress?.state ?? null);
+  draft.zipCode = draft.zipCode ?? parsedAddress?.zipCode ?? null;
 
-  const commaParts = fullAddress.split(",").map((part) => part.trim()).filter(Boolean);
-  if (commaParts.length >= 3) {
-    const street = commaParts[0];
-    const city = draft.city ?? commaParts[1];
-    const stateZip = commaParts[2];
-    const match = stateZip.match(/^([A-Za-z]{2})(?:\s+(\d{5}(?:-\d{4})?))?$/);
-
-    draft.propertyAddress = street;
-    draft.city = city;
-
-    if (match) {
-      draft.state = draft.state ?? match[1].toUpperCase();
-      draft.zipCode = draft.zipCode ?? match[2] ?? null;
-    } else if (!draft.state) {
-      draft.state = stateZip;
-    }
-
-    return draft;
-  }
-
-  const inlineMatch = fullAddress.match(/^(.*?),?\s+([A-Za-z .'-]+),\s*([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/);
-  if (inlineMatch) {
-    draft.propertyAddress = inlineMatch[1].trim();
-    draft.city = draft.city ?? inlineMatch[2].trim();
-    draft.state = draft.state ?? inlineMatch[3].trim().toUpperCase();
-    draft.zipCode = draft.zipCode ?? inlineMatch[4].trim();
+  if (draft.propertyAddress && draft.city && draft.state && draft.zipCode) {
+    draft.propertyAddress = stripTrailingAddressParts(draft.propertyAddress, draft.city, draft.state, draft.zipCode);
   }
 
   return draft;
@@ -407,6 +389,169 @@ function stripTrailingAddressParts(address: string, city: string, state: string,
 
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function extractAddressCandidate(propertyAddress: string | null, rawText: string) {
+  const transcriptLines = rawText
+    .split(/\r?\n/)
+    .map((line) => collapseWhitespace(line))
+    .filter(Boolean);
+
+  const labeledValue = findLabeledAddress(transcriptLines);
+  if (labeledValue) {
+    return labeledValue;
+  }
+
+  const transcriptValue = findAddressAroundStreetLine(transcriptLines);
+  if (transcriptValue) {
+    return transcriptValue;
+  }
+
+  return propertyAddress ? collapseWhitespace(propertyAddress) : null;
+}
+
+function findLabeledAddress(lines: string[]) {
+  const inlineLabelPattern =
+    /^(?:service|property|job|site|home)?\s*address(?:\s*(?:line)?\s*\d+)?\s*[:\-]\s*(.+)$/i;
+  const labelOnlyPattern = /^(?:service|property|job|site|home)?\s*address(?:\s*(?:line)?\s*\d+)?\s*[:\-]?$/i;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    const inlineMatch = line.match(inlineLabelPattern);
+    if (inlineMatch) {
+      const value = inlineMatch[1]?.trim();
+      const nextLine = lines[index + 1];
+      if (value && nextLine && looksLikeCityStateZipLine(nextLine) && !looksLikeCityStateZipLine(value)) {
+        return `${value}, ${nextLine}`;
+      }
+      return value ?? null;
+    }
+
+    if (labelOnlyPattern.test(line)) {
+      const nextLine = lines[index + 1];
+      if (!nextLine) continue;
+      if (looksLikeStreetAddressLine(nextLine)) {
+        const cityStateZipLine = lines[index + 2];
+        if (cityStateZipLine && looksLikeCityStateZipLine(cityStateZipLine)) {
+          return `${nextLine}, ${cityStateZipLine}`;
+        }
+        return nextLine;
+      }
+    }
+  }
+
+  return null;
+}
+
+function findAddressAroundStreetLine(lines: string[]) {
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (!looksLikeStreetAddressLine(line)) continue;
+
+    const nextLine = lines[index + 1];
+    if (nextLine && looksLikeCityStateZipLine(nextLine)) {
+      return `${line}, ${nextLine}`;
+    }
+
+    const inlineAddress = parseAddressCandidate(line);
+    if (inlineAddress?.propertyAddress && inlineAddress.city && inlineAddress.state) {
+      return line;
+    }
+  }
+
+  return null;
+}
+
+function parseAddressCandidate(value: string) {
+  const normalized = collapseWhitespace(value)
+    .replace(/\s*,\s*/g, ", ")
+    .trim();
+  if (!normalized) {
+    return null;
+  }
+
+  const stateZipMatch = normalized.match(/^(.*?)(?:,|\s)+([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/);
+  if (!stateZipMatch) {
+    return parseStreetAndCityOnly(normalized);
+  }
+
+  const prefix = stateZipMatch[1].replace(/,\s*$/, "").trim();
+  const state = stateZipMatch[2].toUpperCase();
+  const zipCode = stateZipMatch[3];
+  const streetCity = splitStreetAndCity(prefix);
+  if (!streetCity) {
+    return null;
+  }
+
+  return {
+    propertyAddress: streetCity.propertyAddress,
+    city: streetCity.city,
+    state,
+    zipCode,
+  };
+}
+
+function parseStreetAndCityOnly(value: string) {
+  const streetCity = splitStreetAndCity(value);
+  if (!streetCity) {
+    return null;
+  }
+
+  return {
+    propertyAddress: streetCity.propertyAddress,
+    city: streetCity.city,
+    state: null,
+    zipCode: null,
+  };
+}
+
+function splitStreetAndCity(value: string) {
+  const commaParts = value.split(",").map((part) => part.trim()).filter(Boolean);
+  if (commaParts.length >= 2) {
+    return {
+      propertyAddress: commaParts.slice(0, -1).join(", "),
+      city: commaParts[commaParts.length - 1] ?? null,
+    };
+  }
+
+  const streetSuffixPattern =
+    /\b(?:st|street|ave|avenue|rd|road|blvd|boulevard|dr|drive|ln|lane|ct|court|cir|circle|way|pkwy|parkway|pl|place|trl|trail|ter|terrace)\b\.?/i;
+  const match = value.match(
+    new RegExp(
+      `^(.*?${streetSuffixPattern.source}(?:\\s+(?:apt|apartment|unit|ste|suite|#)\\s*[A-Za-z0-9-]+)?)(?:,|\\s+)([A-Za-z][A-Za-z .'-]+)$`,
+      "i",
+    ),
+  );
+
+  if (!match) {
+    return null;
+  }
+
+  return {
+    propertyAddress: match[1].trim(),
+    city: match[2].trim(),
+  };
+}
+
+function looksLikeStreetAddressLine(value: string) {
+  return /^\d+[A-Za-z0-9\-\/]*\s+.+\b(?:st|street|ave|avenue|rd|road|blvd|boulevard|dr|drive|ln|lane|ct|court|cir|circle|way|pkwy|parkway|pl|place|trl|trail|ter|terrace)\b\.?/i.test(
+    value,
+  );
+}
+
+function looksLikeCityStateZipLine(value: string) {
+  return /^[A-Za-z][A-Za-z .'-]+,\s*[A-Za-z]{2}\s+\d{5}(?:-\d{4})?$/i.test(value)
+    || /^[A-Za-z][A-Za-z .'-]+\s+[A-Za-z]{2}\s+\d{5}(?:-\d{4})?$/i.test(value);
+}
+
+function normalizeState(value: string | null) {
+  if (!value) return null;
+  const trimmed = collapseWhitespace(value);
+  return trimmed.length === 2 ? trimmed.toUpperCase() : trimmed;
+}
+
+function collapseWhitespace(value: string) {
+  return value.replace(/\s+/g, " ").trim();
 }
 
 function respond(status: number, payload: Record<string, string>) {

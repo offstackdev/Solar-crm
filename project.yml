@@ -17,6 +17,7 @@ targets:
     settings:
       base:
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
+        TARGETED_DEVICE_FAMILY: "1"
         INFOPLIST_KEY_CFBundleDisplayName: Solar CRM
         INFOPLIST_KEY_UILaunchStoryboardName: LaunchScreen
         GENERATE_INFOPLIST_FILE: YES

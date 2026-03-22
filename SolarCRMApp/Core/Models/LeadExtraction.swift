@@ -53,4 +53,34 @@ struct LeadExtraction: Equatable {
     var lowConfidenceFields: [FieldConfidence] {
         fieldConfidences.filter { $0.confidence < 0.7 }
     }
+
+    var formattedRawText: String {
+        Self.formatSourceText(rawText)
+    }
+
+    private static func formatSourceText(_ text: String) -> String {
+        let normalized = text.replacingOccurrences(of: "\r\n", with: "\n")
+        let lines = normalized.components(separatedBy: .newlines)
+
+        var output: [String] = []
+        var previousWasBlank = false
+
+        for line in lines {
+            let cleaned = line.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+
+            if cleaned.isEmpty {
+                if !previousWasBlank, !output.isEmpty {
+                    output.append("")
+                }
+                previousWasBlank = true
+                continue
+            }
+
+            output.append(cleaned)
+            previousWasBlank = false
+        }
+
+        return output.joined(separator: "\n")
+    }
 }

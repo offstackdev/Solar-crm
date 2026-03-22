@@ -40,11 +40,24 @@ struct LeadReviewView: View {
                 }
 
                 DisclosureGroup("Captured source text") {
-                    Text(extraction.rawText)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.top, 6)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("OCR spacing is cleaned for readability. Verify values against the original note before saving.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        ScrollView {
+                            Text(extraction.formattedRawText.isEmpty ? "No source text captured." : extraction.formattedRawText)
+                                .font(.footnote.monospaced())
+                                .lineSpacing(4)
+                                .textSelection(.enabled)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .frame(minHeight: 120, maxHeight: 220)
+                        .padding(10)
+                        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12))
+                    }
+                    .padding(.top, 6)
                 }
 
                 Text("This lead will save as Image Intake and follow the same closer handoff flow once the appointment is confirmed.")
