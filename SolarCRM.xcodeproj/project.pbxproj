@@ -86,7 +86,7 @@
 		5641597072D94052D9040955 /* DoorKnockerTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoorKnockerTabView.swift; sourceTree = "<group>"; };
 		5D0D619E24F068F06627F736 /* LeadReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeadReviewView.swift; sourceTree = "<group>"; };
 		5E3E2967059A5064C598C811 /* RoleShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoleShellView.swift; sourceTree = "<group>"; };
-		63EFABB7ED6D0965C732BA96 /* SolarCRM.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SolarCRM.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		63EFABB7ED6D0965C732BA96 /* SolarCRM.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SolarCRM.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		678D683334C035FD1259D7B3 /* LeadStatus+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LeadStatus+Helpers.swift"; sourceTree = "<group>"; };
 		6C3B835054B83EBCEBDB86BE /* LeadFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeadFormView.swift; sourceTree = "<group>"; };
 		6E46E78182A31AA3319BAB30 /* SupabaseSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseSession.swift; sourceTree = "<group>"; };
@@ -337,8 +337,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
-				TargetAttributes = {
-				};
 			};
 			buildConfigurationList = 3047F749EC45F5FAD7A34E41 /* Build configuration list for PBXProject "SolarCRM" */;
 			developmentRegion = en;
@@ -503,8 +501,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = DR43J3MG2Z;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Solar CRM";
+				INFOPLIST_KEY_SUPABASE_ANON_KEY = sb_publishable_Ll0KgDCocYINI9dG3K0inQ_KN2KnBIH;
+				INFOPLIST_KEY_SUPABASE_URL = https://ferxbvydjnitpoyizgjd.supabase.co;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -521,8 +522,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = DR43J3MG2Z;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Solar CRM";
+				INFOPLIST_KEY_SUPABASE_ANON_KEY = sb_publishable_Ll0KgDCocYINI9dG3K0inQ_KN2KnBIH;
+				INFOPLIST_KEY_SUPABASE_URL = https://ferxbvydjnitpoyizgjd.supabase.co;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
