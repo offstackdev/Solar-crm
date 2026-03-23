@@ -504,6 +504,8 @@
 				DEVELOPMENT_TEAM = DR43J3MG2Z;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Solar CRM";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Solar CRM uses the camera so door knockers can capture field notes and import them into a new lead.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Solar CRM uses your photo library so door knockers can attach note images to a new lead.";
 				INFOPLIST_KEY_SUPABASE_ANON_KEY = sb_publishable_Ll0KgDCocYINI9dG3K0inQ_KN2KnBIH;
 				INFOPLIST_KEY_SUPABASE_URL = https://ferxbvydjnitpoyizgjd.supabase.co;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
@@ -525,6 +527,8 @@
 				DEVELOPMENT_TEAM = DR43J3MG2Z;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Solar CRM";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Solar CRM uses the camera so door knockers can capture field notes and import them into a new lead.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Solar CRM uses your photo library so door knockers can attach note images to a new lead.";
 				INFOPLIST_KEY_SUPABASE_ANON_KEY = sb_publishable_Ll0KgDCocYINI9dG3K0inQ_KN2KnBIH;
 				INFOPLIST_KEY_SUPABASE_URL = https://ferxbvydjnitpoyizgjd.supabase.co;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;

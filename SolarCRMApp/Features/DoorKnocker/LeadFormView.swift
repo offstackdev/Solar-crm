@@ -16,7 +16,7 @@ struct LeadFormView: View {
     var body: some View {
         Form {
             if let assignedCloserName {
-                Section("Routing") {
+                Section {
                     LabeledContent("Assigned Closer", value: assignedCloserName)
                     Text("This lead stays with you until the appointment is confirmed, then it moves to the closer's queue automatically.")
                         .font(.subheadline)
@@ -26,20 +26,9 @@ struct LeadFormView: View {
 
             if showReviewContext {
                 Section("Review Required") {
-                    Text("AI-filled values can be edited before the lead is saved.")
+                    Text("Review and edit the extracted values before saving the lead.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                }
-            }
-
-            Section("Required") {
-                Text("Fields marked with * are required before saving.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                if !draft.isValidForSubmission {
-                    Text("Missing: \(draft.missingRequiredFields.joined(separator: ", "))")
-                        .font(.footnote)
-                        .foregroundStyle(.red)
                 }
             }
 
@@ -103,6 +92,11 @@ struct LeadFormView: View {
             Section {
                 Button {
                     Task {
+                        guard draft.isValidForSubmission else {
+                            saveError = "Complete the required fields before saving: \(draft.missingRequiredFields.joined(separator: ", "))."
+                            return
+                        }
+
                         isSubmitting = true
                         saveError = nil
                         defer { isSubmitting = false }
@@ -121,7 +115,7 @@ struct LeadFormView: View {
                     }
                     .frame(maxWidth: .infinity)
                 }
-                .disabled(!draft.isValidForSubmission || isSubmitting)
+                .disabled(isSubmitting)
             }
         }
         .navigationTitle(title)
