@@ -122,7 +122,7 @@ final class AppState: ObservableObject {
         }
 
         if let manager = users.first(where: { $0.role == .manager && $0.orgID == currentUser.orgID }) {
-            await sendNotification(
+            _ = await sendNotification(
                 userID: manager.id,
                 leadID: persistedLead.id,
                 kind: .leadStatusUpdate,
@@ -174,7 +174,7 @@ final class AppState: ObservableObject {
         await refreshLeadData()
 
         if let closerID = persistedLead.assignedCloserID, user.role == .doorKnocker, status == .appointmentConfirmed {
-            await sendNotification(
+            _ = await sendNotification(
                 userID: closerID,
                 leadID: persistedLead.id,
                 kind: .appointmentConfirmed,
@@ -184,7 +184,7 @@ final class AppState: ObservableObject {
         }
 
         if user.role == .doorKnocker, status == .appointmentConfirmed {
-            await sendNotification(
+            _ = await sendNotification(
                 userID: persistedLead.createdByDoorKnockerID,
                 leadID: persistedLead.id,
                 kind: .leadStatusUpdate,
@@ -195,7 +195,7 @@ final class AppState: ObservableObject {
 
         if status == .appointmentCanceled {
             if let closerID = persistedLead.assignedCloserID {
-                await sendNotification(
+                _ = await sendNotification(
                     userID: closerID,
                     leadID: persistedLead.id,
                     kind: .leadStatusUpdate,
@@ -208,7 +208,7 @@ final class AppState: ObservableObject {
 
         if status == .appointmentRescheduled {
             if let closerID = persistedLead.assignedCloserID {
-                await sendNotification(
+                _ = await sendNotification(
                     userID: closerID,
                     leadID: persistedLead.id,
                     kind: .appointmentRescheduled,
@@ -323,7 +323,7 @@ final class AppState: ObservableObject {
         await refreshLeadData()
 
         if outcome == .rescheduled {
-            await sendNotification(
+            _ = await sendNotification(
                 userID: persistedLead.createdByDoorKnockerID,
                 leadID: persistedLead.id,
                 kind: .appointmentRescheduled,
@@ -331,7 +331,7 @@ final class AppState: ObservableObject {
                 message: "\(persistedLead.homeownerFullName) was marked Rescheduled by the closer and needs a new confirmed appointment time."
             )
         } else {
-            await sendNotification(
+            _ = await sendNotification(
                 userID: persistedLead.createdByDoorKnockerID,
                 leadID: persistedLead.id,
                 kind: .leadStatusUpdate,
@@ -341,7 +341,7 @@ final class AppState: ObservableObject {
         }
 
         if let manager = users.first(where: { $0.role == .manager && $0.orgID == persistedLead.orgID }) {
-            await sendNotification(
+            _ = await sendNotification(
                 userID: manager.id,
                 leadID: persistedLead.id,
                 kind: .leadStatusUpdate,
@@ -371,7 +371,7 @@ final class AppState: ObservableObject {
             return
         }
 
-        await sendNotification(
+        _ = await sendNotification(
             userID: closerID,
             leadID: persistedLead.id,
             kind: .assignmentChanged,
@@ -379,7 +379,7 @@ final class AppState: ObservableObject {
             message: "\(persistedLead.homeownerFullName) is now assigned to you."
         )
 
-        await sendNotification(
+        _ = await sendNotification(
             userID: persistedLead.createdByDoorKnockerID,
             leadID: persistedLead.id,
             kind: .assignmentChanged,
@@ -388,7 +388,7 @@ final class AppState: ObservableObject {
         )
 
         if let previousCloserID, previousCloserID != closerID {
-            await sendNotification(
+            _ = await sendNotification(
                 userID: previousCloserID,
                 leadID: persistedLead.id,
                 kind: .assignmentChanged,

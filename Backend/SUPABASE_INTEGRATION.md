@@ -12,9 +12,11 @@ If those variables are missing, the app falls back to mock services and seeded d
 - Supabase auth/profile scaffolding is in place.
 - Lead and notification services now have DTO mapping and repository scaffolding against the schema.
 - Session persistence now uses a Keychain-backed store on iOS.
+- Device builds can now read `SUPABASE_URL` and `SUPABASE_ANON_KEY` from the generated app Info.plist in addition to Xcode launch environment variables, which keeps physical-device runs out of mock mode.
 - Core auth, lead, status-history, and notification flows were live-validated against the configured Supabase project on March 21, 2026 (America/Los_Angeles).
-- Image intake upload, OCR extraction, review-before-save, appointment scheduling after save, and closer handoff were live-validated against the configured Supabase project on March 22, 2026 (America/Los_Angeles).
+- Image intake upload, OCR extraction, review-before-save, appointment scheduling after save, and closer handoff were live-validated against the configured Supabase project on a physical iPhone on March 22, 2026 (America/Los_Angeles).
 - Address parsing fallbacks and source-text review formatting were hardened in code on March 22, 2026, but those quality changes still need another live pass against a broader set of handwritten note samples.
+- The iOS simulator still shows intermittent CFNetwork `cannot parse response` / protocol-violation failures against Supabase Storage and `lead-image-intake`, so simulator results should not be treated as authoritative for the live OCR path.
 - Cross-user notification inserts must use `Prefer: return=minimal`. Asking PostgREST for `return=representation` can fail under RLS because the sender is not allowed to read the recipient's notification row.
 - Some service methods still need stronger error handling and periodic re-validation after schema or policy changes.
 
@@ -46,6 +48,14 @@ The image intake flow now assumes a real Supabase-backed path:
    - `rawText`
 5. The app opens the existing review/edit screen and only persists the lead if the user taps save.
 6. After save, the door knocker can set or update the appointment time from the lead detail screen and then confirm handoff to the assigned closer.
+
+Fallback behavior:
+
+- If the direct client upload/invoke path fails with the simulator-only transport issue seen in CFNetwork (`cannot parse response`, protocol violation, prematurely closed stream), the app now retries image intake by sending the image inline to `lead-image-intake`.
+- The Edge Function accepts either:
+  - `bucket` + `objectPath`
+  - or `inlineImageBase64`
+- This fallback was added to keep development moving, but the physical-device path remains the primary validation target.
 
 ## Edge Function Auth Posture
 
@@ -137,6 +147,7 @@ When `responses` becomes worth it:
   - image picker reads real bytes instead of inventing a mock payload name
   - client uploads to authenticated private Supabase storage
   - client invokes the live `lead-image-intake` Edge Function
+  - client falls back to inline function submission when simulator networking fails before a valid Supabase response is returned
   - OCR/AI returns a structured extraction payload
   - extracted fields prefill the review screen
   - review-before-save UX remains intact and image extraction does not auto-save
@@ -147,6 +158,7 @@ When `responses` becomes worth it:
   - OCR quality across more real field note samples
   - address splitting accuracy for handwritten, labeled, two-line, and comma-free address formats after the March 22, 2026 fallback changes
   - raw source text readability on-device with long OCR payloads and messy handwritten spacing
+  - whether the inline-image fallback should remain enabled for all debug builds or be more tightly scoped to development-only conditions
   - any future migration from `chat/completions` to `responses`
   - any attempt to re-enable gateway JWT verification for the iOS bearer-token flow
 
