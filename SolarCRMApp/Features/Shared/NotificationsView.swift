@@ -13,14 +13,14 @@ struct NotificationsView: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            AppScreen(title: "Notifications") {
                 if unread.isEmpty && read.isEmpty {
                     EmptyStateView(title: "No notifications", message: "Reminder requests, assignment changes, and lead updates will appear here.", systemImage: "bell.slash")
-                        .listRowSeparator(.hidden)
                 }
 
                 if !unread.isEmpty {
-                    Section("Unread") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        AppSectionHeader("Unread")
                         ForEach(unread) { notification in
                             NotificationRow(notification: notification)
                         }
@@ -28,7 +28,8 @@ struct NotificationsView: View {
                 }
 
                 if !read.isEmpty {
-                    Section("Earlier") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        AppSectionHeader("Earlier")
                         ForEach(read) { notification in
                             NotificationRow(notification: notification)
                         }
@@ -36,6 +37,7 @@ struct NotificationsView: View {
                 }
             }
             .navigationTitle("Notifications")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }
@@ -45,29 +47,32 @@ private struct NotificationRow: View {
     let notification: AppNotification
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: notification.kind.symbolName)
-                .font(.headline)
-                .foregroundStyle(notification.isRead ? Color.secondary : Color.blue)
-                .frame(width: 24)
+        AppOutlinedSurface {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: notification.kind.symbolName)
+                    .font(.headline)
+                    .foregroundStyle(notification.isRead ? AppTheme.onSurfaceVariant : AppTheme.primary)
+                    .frame(width: 24)
 
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text(notification.title)
-                        .font(.headline)
-                    Spacer()
-                    if !notification.isRead {
-                        Circle()
-                            .fill(.blue)
-                            .frame(width: 10, height: 10)
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text(notification.title)
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(AppTheme.onSurface)
+                        Spacer()
+                        if !notification.isRead {
+                            Circle()
+                                .fill(AppTheme.primary)
+                                .frame(width: 10, height: 10)
+                        }
                     }
+                    Text(notification.message)
+                        .font(.subheadline)
+                        .foregroundStyle(AppTheme.onSurfaceVariant)
+                    Text(notification.createdAt.formatted(date: .abbreviated, time: .shortened))
+                        .font(.caption)
+                        .foregroundStyle(AppTheme.onSurfaceVariant.opacity(0.7))
                 }
-                Text(notification.message)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Text(notification.createdAt.formatted(date: .abbreviated, time: .shortened))
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
             }
         }
         .contentShape(Rectangle())

@@ -2,7 +2,9 @@ import SwiftUI
 
 struct CloserLeadDetailView: View {
     @EnvironmentObject private var appState: AppState
+
     let leadID: UUID
+
     @State private var selectedOutcome: LeadOutcome = .closed
     @State private var isRequestingReminder = false
     @State private var isSavingOutcome = false
@@ -55,22 +57,7 @@ struct CloserLeadDetailView: View {
 
                 Section("Closer Actions") {
                     if canRequestReminder {
-                        Button {
-                            Task {
-                                isRequestingReminder = true
-                                let result = await appState.requestReminder(for: leadID)
-                                isRequestingReminder = false
-
-                                switch result {
-                                case .sent:
-                                    reminderMessage = "Reminder sent to \(appState.userName(for: lead.createdByDoorKnockerID))."
-                                case .alreadyPending:
-                                    reminderMessage = "A reminder is already pending for this lead."
-                                case .failed(let message):
-                                    reminderMessage = message
-                                }
-                            }
-                        } label: {
+                        Button(action: requestReminder) {
                             HStack {
                                 if isRequestingReminder {
                                     ProgressView()
@@ -88,15 +75,7 @@ struct CloserLeadDetailView: View {
                     }
 
                     if canMarkAppointmentRun {
-                        Button("Mark Appointment Run") {
-                            Task {
-                                await appState.updateLeadStatus(
-                                    leadID: leadID,
-                                    status: .appointmentRun,
-                                    note: "Closer is running the appointment"
-                                )
-                            }
-                        }
+                        Button("Mark Appointment Run", action: markAppointmentRun)
                     }
 
                     if lead.currentStatus == .appointmentRun {
@@ -117,16 +96,7 @@ struct CloserLeadDetailView: View {
                             }
                         }
 
-                        Button {
-                            Task {
-                                isSavingOutcome = true
-                                await appState.updateCloserOutcome(leadID: leadID, outcome: selectedOutcome)
-                                outcomeMessage = selectedOutcome == .rescheduled
-                                    ? "Outcome saved. The lead was returned for appointment re-confirmation."
-                                    : "Outcome saved and shared back with the door knocker."
-                                isSavingOutcome = false
-                            }
-                        } label: {
+                        Button(action: saveOutcome) {
                             HStack {
                                 if isSavingOutcome {
                                     ProgressView()
@@ -172,18 +142,69 @@ struct CloserLeadDetailView: View {
             }
         }
         .navigationTitle("Lead Detail")
-        .onAppear {
-            if let lead {
-                switch lead.currentStatus {
-                case .closed: selectedOutcome = .closed
-                case .oneLegger: selectedOutcome = .oneLegger
-                case .needsFollowUp: selectedOutcome = .needsFollowUp
-                case .noShow: selectedOutcome = .noShow
-                case .appointmentRescheduled: selectedOutcome = .rescheduled
-                case .notInterested: selectedOutcome = .notInterested
-                default: break
-                }
+        .scrollContentBackground(.hidden)
+        .background(AppTheme.background)
+        .tint(AppTheme.primary)
+        .task(id: lead?.currentStatus) {
+            selectedOutcome = outcomeSelection(for: lead?.currentStatus)
+        }
+    }
+
+    private func requestReminder() {
+        Task {
+            isRequestingReminder = true
+            defer { isRequestingReminder = false }
+
+            let result = await appState.requestReminder(for: leadID)
+            switch result {
+            case .sent:
+                reminderMessage = "Reminder sent to \(appState.userName(for: lead?.createdByDoorKnockerID))."
+            case .alreadyPending:
+                reminderMessage = "A reminder is already pending for this lead."
+            case .failed(let message):
+                reminderMessage = message
             }
+        }
+    }
+
+    private func markAppointmentRun() {
+        Task {
+            await appState.updateLeadStatus(
+                leadID: leadID,
+                status: .appointmentRun,
+                note: "Closer is running the appointment"
+            )
+        }
+    }
+
+    private func saveOutcome() {
+        Task {
+            isSavingOutcome = true
+            defer { isSavingOutcome = false }
+
+            await appState.updateCloserOutcome(leadID: leadID, outcome: selectedOutcome)
+            outcomeMessage = selectedOutcome == .rescheduled
+                ? "Outcome saved. The lead was returned for appointment re-confirmation."
+                : "Outcome saved and shared back with the door knocker."
+        }
+    }
+
+    private func outcomeSelection(for status: LeadStatus?) -> LeadOutcome {
+        switch status {
+        case .closed:
+            return .closed
+        case .oneLegger:
+            return .oneLegger
+        case .needsFollowUp:
+            return .needsFollowUp
+        case .noShow:
+            return .noShow
+        case .appointmentRescheduled:
+            return .rescheduled
+        case .notInterested:
+            return .notInterested
+        default:
+            return selectedOutcome
         }
     }
 }

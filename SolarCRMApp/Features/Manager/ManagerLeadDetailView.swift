@@ -53,5 +53,8 @@ struct ManagerLeadDetailView: View {
             }
         }
         .navigationTitle("Lead Admin")
+        .scrollContentBackground(.hidden)
+        .background(AppTheme.background)
+        .tint(AppTheme.primary)
     }
 }

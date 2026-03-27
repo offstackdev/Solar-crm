@@ -18,205 +18,180 @@ struct LoginView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.white
+                AppTheme.background
                     .ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 0) {
+                    VStack(spacing: 20) {
                         header
                         formSection
+                        supportSection
                         footerSection
 
 #if DEBUG
                         debugSection
 #endif
                     }
-                    .padding(.horizontal, 28)
-                    .padding(.top, 20)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 24)
                     .padding(.bottom, 32)
                     .frame(maxWidth: 520)
                     .frame(maxWidth: .infinity)
                 }
                 .scrollDismissesKeyboard(.interactively)
             }
-            .navigationBarHidden(true)
+            .toolbar(.hidden, for: .navigationBar)
         }
     }
 
     private var header: some View {
-        VStack(spacing: 26) {
-            HStack {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top) {
+                SolarMark()
+                    .fill(AppTheme.primary)
+                    .frame(width: 54, height: 54)
+
                 Spacer()
+
                 modeBadge
             }
 
-            VStack(spacing: 24) {
-                SolarMark()
-                    .fill(Color.black)
-                    .frame(width: 64, height: 64)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Sign In")
+                    .font(.largeTitle.weight(.bold))
+                    .foregroundStyle(AppTheme.onSurface)
 
-                VStack(spacing: 10) {
-                    Text("Log in to Solar CRM")
-                        .font(.system(size: 39, weight: .bold, design: .rounded))
-                        .foregroundStyle(.black)
-                        .multilineTextAlignment(.center)
-
-                    Text("Access live leads, handoffs, and appointments from the field.")
-                        .font(.system(size: 17, weight: .medium, design: .rounded))
-                        .foregroundStyle(Color.black.opacity(0.52))
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(2)
-                }
+                Text("Access live leads, handoffs, and appointments from the field.")
+                    .font(.body)
+                    .foregroundStyle(AppTheme.onSurfaceVariant)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.top, 36)
-            .padding(.bottom, 34)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
     private var formSection: some View {
-        VStack(spacing: 16) {
-            AuthTextField(
-                title: "Email",
-                text: $email,
-                systemImage: "envelope",
-                keyboardType: .emailAddress,
-                textContentType: .username,
-                submitLabel: .next,
-                isFocused: focusedField == .email
-            )
-            .focused($focusedField, equals: .email)
-            .onSubmit {
-                focusedField = .password
-            }
+        AppSurface {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Account")
+                    .font(.headline)
+                    .foregroundStyle(AppTheme.onSurface)
 
-            AuthSecureField(
-                title: "Password",
-                text: $password,
-                systemImage: "lock",
-                textContentType: .password,
-                submitLabel: .go,
-                isFocused: focusedField == .password
-            )
-            .focused($focusedField, equals: .password)
-            .onSubmit {
-                Task { await signInWithEmail() }
-            }
+                AuthTextField(
+                    title: "Email",
+                    text: $email,
+                    systemImage: "envelope",
+                    keyboardType: .emailAddress,
+                    textContentType: .username,
+                    submitLabel: .next,
+                    isFocused: focusedField == .email
+                )
+                .focused($focusedField, equals: .email)
+                .onSubmit {
+                    focusedField = .password
+                }
 
-            Button {
-                focusedField = nil
-                Task { await signInWithEmail() }
-            } label: {
-                ZStack {
-                    Text("Continue")
-                        .opacity(isLoading ? 0 : 1)
+                AuthSecureField(
+                    title: "Password",
+                    text: $password,
+                    systemImage: "lock",
+                    textContentType: .password,
+                    submitLabel: .go,
+                    isFocused: focusedField == .password
+                )
+                .focused($focusedField, equals: .password)
+                .onSubmit {
+                    Task { await signInWithEmail() }
+                }
 
+                Button {
+                    focusedField = nil
+                    Task { await signInWithEmail() }
+                } label: {
                     if isLoading {
                         ProgressView()
-                            .tint(.white)
+                            .frame(maxWidth: .infinity)
+                    } else {
+                        Text("Continue")
+                            .frame(maxWidth: .infinity)
                     }
                 }
-                .font(.system(size: 20, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 62)
-                .background(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(canSubmit ? Color.black.opacity(0.72) : Color.black.opacity(0.28))
-                )
-            }
-            .disabled(!canSubmit || isLoading)
-            .padding(.top, 6)
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .disabled(!canSubmit || isLoading)
 
-            if let errorMessage {
-                Text(errorMessage)
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
-                    .foregroundStyle(Color.red.opacity(0.88))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, 4)
+                if let errorMessage {
+                    Text(errorMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
+        }
+    }
 
-            VStack(spacing: 10) {
+    private var supportSection: some View {
+        AppOutlinedSurface {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Sign-in Notes")
+                    .font(.headline)
+                    .foregroundStyle(AppTheme.onSurface)
+
+                Text("Email and password are the only live sign-in credentials right now. Apple and Google sign-in are intentionally not wired to the backend yet.")
+                    .font(.subheadline)
+                    .foregroundStyle(AppTheme.onSurfaceVariant)
+
                 Button("Need help signing in?") {
                     focusedField = nil
                 }
-                .buttonStyle(.plain)
-                .font(.system(size: 17, weight: .semibold, design: .rounded))
-                .foregroundStyle(Color(red: 0.06, green: 0.48, blue: 0.95))
-                .padding(.top, 14)
-
-                Text("Email and password are the only live sign-in credentials right now. Apple and Google sign-in are intentionally not wired to the backend yet.")
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
-                    .foregroundStyle(Color.black.opacity(0.42))
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(2)
-                    .padding(.horizontal, 10)
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
             }
-            .padding(.top, 8)
         }
     }
 
     private var footerSection: some View {
-        VStack(spacing: 10) {
-            Text("By logging in, you agree to Solar CRM's access and privacy policies for field operations.")
-                .font(.system(size: 13, weight: .medium, design: .rounded))
-                .foregroundStyle(Color.black.opacity(0.34))
-                .multilineTextAlignment(.center)
-                .lineSpacing(2)
-                .padding(.horizontal, 14)
-        }
-        .padding(.top, 34)
+        Text("By signing in, you agree to Solar CRM's access and privacy policies for field operations.")
+            .font(.footnote)
+            .foregroundStyle(AppTheme.onSurfaceVariant)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 12)
     }
 
 #if DEBUG
     private var debugSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Divider()
-                .padding(.bottom, 4)
+        AppOutlinedSurface {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Developer Quick Access")
+                    .font(.headline)
+                    .foregroundStyle(AppTheme.onSurface)
 
-            Text("Developer Quick Access")
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                .foregroundStyle(Color.black.opacity(0.7))
-
-            Picker("Demo Role", selection: $selectedRole) {
-                ForEach(UserRole.allCases) { role in
-                    Text(role.title).tag(role)
+                Picker("Demo Role", selection: $selectedRole) {
+                    ForEach(UserRole.allCases) { role in
+                        Label(role.title, systemImage: role.symbolName).tag(role)
+                    }
                 }
-            }
-            .pickerStyle(.segmented)
+                .pickerStyle(.segmented)
 
-            Button("Continue as \(selectedRole.title)") {
-                Task {
-                    await signInAsRole(selectedRole)
+                Button("Continue as \(selectedRole.title)") {
+                    Task {
+                        await signInAsRole(selectedRole)
+                    }
                 }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
             }
-            .font(.system(size: 16, weight: .semibold, design: .rounded))
-            .frame(maxWidth: .infinity)
-            .frame(height: 54)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.black.opacity(0.03))
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.black.opacity(0.14), lineWidth: 1)
-            }
-            .foregroundStyle(.black)
         }
-        .padding(.top, 34)
     }
 #endif
 
     private var modeBadge: some View {
         Text(appState.isUsingBackend ? "Live Supabase" : "Mock Mode")
-            .font(.system(size: 12, weight: .semibold, design: .rounded))
-            .foregroundStyle(appState.isUsingBackend ? Color(red: 0.11, green: 0.43, blue: 0.24) : Color(red: 0.68, green: 0.38, blue: 0.06))
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(
-                Capsule()
-                    .fill(appState.isUsingBackend ? Color(red: 0.90, green: 0.97, blue: 0.92) : Color(red: 1.0, green: 0.95, blue: 0.87))
-            )
+            .font(.caption.weight(.medium))
+            .foregroundStyle(appState.isUsingBackend ? .green : .orange)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(appState.isUsingBackend ? Color.green.opacity(0.12) : Color.orange.opacity(0.12), in: Capsule())
     }
 
     private var canSubmit: Bool {
@@ -275,28 +250,28 @@ private struct AuthTextField: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: systemImage)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(Color.black.opacity(0.32))
+                .font(.body)
+                .foregroundStyle(AppTheme.onSurfaceVariant)
                 .frame(width: 20)
 
             TextField(title, text: $text)
-                .font(.system(size: 19, weight: .medium, design: .rounded))
-                .foregroundStyle(.black)
+                .font(.body)
+                .foregroundStyle(AppTheme.onSurface)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .keyboardType(keyboardType)
                 .textContentType(textContentType)
                 .submitLabel(submitLabel)
         }
-        .padding(.horizontal, 18)
-        .frame(height: 62)
+        .padding(.horizontal, 14)
+        .frame(height: 52)
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.black.opacity(0.06))
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(uiColor: .systemBackground))
         )
         .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(isFocused ? Color.black.opacity(0.28) : Color.clear, lineWidth: 1.5)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(isFocused ? Color.accentColor : AppTheme.outline, lineWidth: 1)
         }
         .animation(.easeOut(duration: 0.18), value: isFocused)
     }
@@ -313,25 +288,25 @@ private struct AuthSecureField: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: systemImage)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(Color.black.opacity(0.32))
+                .font(.body)
+                .foregroundStyle(AppTheme.onSurfaceVariant)
                 .frame(width: 20)
 
             SecureField(title, text: $text)
-                .font(.system(size: 19, weight: .medium, design: .rounded))
-                .foregroundStyle(.black)
+                .font(.body)
+                .foregroundStyle(AppTheme.onSurface)
                 .textContentType(textContentType)
                 .submitLabel(submitLabel)
         }
-        .padding(.horizontal, 18)
-        .frame(height: 62)
+        .padding(.horizontal, 14)
+        .frame(height: 52)
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.black.opacity(0.06))
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(uiColor: .systemBackground))
         )
         .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(isFocused ? Color.black.opacity(0.28) : Color.clear, lineWidth: 1.5)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(isFocused ? Color.accentColor : AppTheme.outline, lineWidth: 1)
         }
         .animation(.easeOut(duration: 0.18), value: isFocused)
     }

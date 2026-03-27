@@ -14,8 +14,9 @@ struct NewLeadFlowView: View {
     }
 
     var body: some View {
-        List {
-            Section("Choose how to start") {
+        AppScreen(title: "Add Lead") {
+            VStack(alignment: .leading, spacing: 12) {
+                AppSectionHeader("Choose how to start")
                 NavigationLink {
                     LeadFormView(
                         title: "Manual Lead Entry",
@@ -54,39 +55,44 @@ struct NewLeadFlowView: View {
                 }
             }
 
-            Section("AI Intake") {
-                Text(appState.supportsAIExtraction
-                     ? "Image-created leads follow the same review and handoff flow as manual leads. Nothing is saved until the extracted fields are verified."
-                     : "Image-based AI extraction is disabled until a real backend OCR/AI flow is connected.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 12) {
+                AppSectionHeader("AI Intake")
+                AppSurface {
+                    Text(appState.supportsAIExtraction
+                         ? "Image-created leads follow the same review and handoff flow as manual leads. Nothing is saved until the extracted fields are verified."
+                         : "Image-based AI extraction is disabled until a real backend OCR/AI flow is connected.")
+                        .font(.subheadline)
+                        .foregroundStyle(AppTheme.onSurfaceVariant)
+                }
             }
         }
         .navigationTitle("Add Lead")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func optionRow(title: String, message: String, systemImage: String) -> some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: systemImage)
-                .font(.system(size: 18, weight: .semibold))
-                .frame(width: 30, height: 30)
-                .foregroundStyle(.blue)
-                .padding(8)
-                .background(Color.blue.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        AppOutlinedSurface {
+            HStack(alignment: .top, spacing: 14) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 18, weight: .semibold))
+                    .frame(width: 30, height: 30)
+                    .foregroundStyle(AppTheme.primary)
+                    .padding(8)
+                    .background(AppTheme.primary.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundStyle(AppTheme.onSurface)
 
-                Text(message)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    Text(message)
+                        .font(.subheadline)
+                        .foregroundStyle(AppTheme.onSurfaceVariant)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.vertical, 6)
     }
 }
 
@@ -106,20 +112,21 @@ private struct LeadImageImportView: View {
     @State private var pendingPayload: LeadImagePayload?
 
     var body: some View {
-        List {
-            Section {
+        AppScreen(title: "Add Notes Image") {
+            AppSurface {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Add Notes Image")
                         .font(.title3.bold())
+                        .foregroundStyle(AppTheme.onSurface)
 
                     Text("Capture a new photo or choose an existing image. AI will extract likely lead details, then you review every field before saving.")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AppTheme.onSurfaceVariant)
                 }
-                .padding(.vertical, 4)
             }
 
-            Section("Choose Image Source") {
+            VStack(alignment: .leading, spacing: 12) {
+                AppSectionHeader("Choose Image Source")
                 Menu {
                     Button("Photo Library", systemImage: "photo.on.rectangle") {
                         extractionError = nil
@@ -151,16 +158,22 @@ private struct LeadImageImportView: View {
                 .buttonStyle(.plain)
             }
 
-            Section("How It Works") {
-                Text("After you select an image, Solar CRM sends it through the existing AI intake flow and opens a review screen before anything is saved.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 12) {
+                AppSectionHeader("How It Works")
+                AppSurface {
+                    Text("After you select an image, Solar CRM sends it through the existing AI intake flow and opens a review screen before anything is saved.")
+                        .font(.footnote)
+                        .foregroundStyle(AppTheme.onSurfaceVariant)
+                }
             }
 
             if let extractionErrorMessage = extractionError {
-                Section("Image Issue") {
-                    Text(extractionErrorMessage)
-                        .foregroundStyle(.red)
+                VStack(alignment: .leading, spacing: 12) {
+                    AppSectionHeader("Image Issue")
+                    AppSurface(fill: Color.red.opacity(0.08)) {
+                        Text(extractionErrorMessage)
+                            .foregroundStyle(.red)
+                    }
 
                     Button("Try Another Image") {
                         extractionError = nil
@@ -235,31 +248,32 @@ private struct LeadImageImportView: View {
         accentColor: Color = .blue,
         iconBackground: Color = Color.blue.opacity(0.10)
     ) -> some View {
-        HStack(spacing: 14) {
-            Image(systemName: systemImage)
-                .font(.system(size: 18, weight: .semibold))
-                .frame(width: 28, height: 28)
-                .foregroundStyle(accentColor)
-                .padding(10)
-                .background(iconBackground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        AppOutlinedSurface {
+            HStack(spacing: 14) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 18, weight: .semibold))
+                    .frame(width: 28, height: 28)
+                    .foregroundStyle(accentColor)
+                    .padding(10)
+                    .background(iconBackground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                Text(message)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundStyle(AppTheme.onSurface)
+                    Text(message)
+                        .font(.subheadline)
+                        .foregroundStyle(AppTheme.onSurfaceVariant)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(AppTheme.onSurfaceVariant.opacity(0.6))
             }
-
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(.tertiary)
         }
-        .padding(.vertical, 8)
         .contentShape(Rectangle())
     }
 
@@ -388,13 +402,10 @@ private struct LeadExtractionLoadingView: View {
             .padding(24)
         }
         .navigationBarBackButtonHidden(true)
-        .onAppear {
+        .task {
             guard !hasStarted else { return }
             hasStarted = true
-
-            Task {
-                await onStart()
-            }
+            await onStart()
         }
         .task(id: hasStarted) {
             guard hasStarted else { return }

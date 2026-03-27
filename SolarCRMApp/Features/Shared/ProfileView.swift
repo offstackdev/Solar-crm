@@ -5,23 +5,32 @@ struct ProfileView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
+            AppScreen(title: "Settings") {
                 if let currentUser = appState.currentUser {
-                    Section("Profile") {
-                        LabeledContent("Name", value: currentUser.fullName)
-                        LabeledContent("Email", value: currentUser.email)
-                        LabeledContent("Role", value: currentUser.role.title)
-                        LabeledContent("Phone", value: currentUser.phoneNumber)
+                    VStack(alignment: .leading, spacing: 12) {
+                        AppSectionHeader("Profile")
+                        AppOutlinedSurface {
+                            VStack(alignment: .leading, spacing: 16) {
+                                AppInfoRow(label: "Name", value: currentUser.fullName)
+                                AppInfoRow(label: "Email", value: currentUser.email)
+                                AppInfoRow(label: "Role", value: currentUser.role.title)
+                                AppInfoRow(label: "Phone", value: currentUser.phoneNumber)
+                            }
+                        }
                     }
                 }
 
-                Section {
-                    Button("Sign Out", role: .destructive) {
-                        Task { await appState.logout() }
-                    }
+                Button("Sign Out", role: .destructive) {
+                    Task { await appState.logout() }
                 }
+                .font(.headline.weight(.bold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 18)
+                .background(Color.red.opacity(0.12), in: Capsule())
+                .foregroundStyle(.red)
             }
             .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }

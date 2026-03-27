@@ -14,40 +14,46 @@ struct ManagerPipelineBoardView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: 16) {
-                    ForEach(boardColumns) { column in
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack {
-                                Text(column.title)
-                                    .font(.headline)
-                                Spacer()
-                                Text("\(leads(in: column).count)")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                            }
+            ZStack {
+                AppTheme.background
+                    .ignoresSafeArea()
 
-                            ForEach(leads(in: column)) { lead in
-                                NavigationLink {
-                                    ManagerLeadDetailView(leadID: lead.id)
-                                } label: {
-                                    LeadCardView(
-                                        lead: lead,
-                                        doorKnockerName: appState.userName(for: lead.createdByDoorKnockerID),
-                                        closerName: appState.userName(for: lead.assignedCloserID)
-                                    )
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: 16) {
+                        ForEach(boardColumns) { column in
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack {
+                                    Text(column.title)
+                                        .font(.headline.weight(.bold))
+                                        .foregroundStyle(AppTheme.onSurface)
+                                    Spacer()
+                                    Text("\(leads(in: column).count)")
+                                        .font(.caption.weight(.black))
+                                        .foregroundStyle(AppTheme.onSurfaceVariant)
                                 }
-                                .buttonStyle(.plain)
-                            }
 
-                            Spacer()
+                                ForEach(leads(in: column)) { lead in
+                                    NavigationLink {
+                                        ManagerLeadDetailView(leadID: lead.id)
+                                    } label: {
+                                        LeadCardView(
+                                            lead: lead,
+                                            doorKnockerName: appState.userName(for: lead.createdByDoorKnockerID),
+                                            closerName: appState.userName(for: lead.assignedCloserID)
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+
+                                Spacer()
+                            }
+                            .padding(20)
+                            .frame(width: 320, alignment: .topLeading)
+                            .background(AppTheme.surfaceLow, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
                         }
-                        .padding()
-                        .frame(width: 300, alignment: .topLeading)
-                        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     }
+                    .padding(20)
                 }
-                .padding(20)
             }
             .navigationTitle("Pipeline Board")
         }

@@ -17,11 +17,11 @@ struct CloserScheduleView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section("Ready To Run") {
+            AppScreen(title: "My Schedule") {
+                VStack(alignment: .leading, spacing: 12) {
+                    AppSectionHeader("Ready To Run")
                     if readyLeads.isEmpty {
                         EmptyStateView(title: "No scheduled appointments", message: "Confirmed leads move here automatically.", systemImage: "calendar.badge.exclamationmark")
-                            .listRowSeparator(.hidden)
                     } else {
                         ForEach(readyLeads) { lead in
                             NavigationLink {
@@ -36,11 +36,14 @@ struct CloserScheduleView: View {
                     }
                 }
 
-                Section("Appointment Run") {
+                VStack(alignment: .leading, spacing: 12) {
+                    AppSectionHeader("Appointment Run")
                     if runningLeads.isEmpty {
-                        Text("Appointments you have started will stay here until an outcome is saved.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+                        AppSurface {
+                            Text("Appointments you have started will stay here until an outcome is saved.")
+                                .font(.footnote)
+                                .foregroundStyle(AppTheme.onSurfaceVariant)
+                        }
                     } else {
                         ForEach(runningLeads) { lead in
                             NavigationLink {
@@ -56,6 +59,7 @@ struct CloserScheduleView: View {
                 }
             }
             .navigationTitle("My Schedule")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }
