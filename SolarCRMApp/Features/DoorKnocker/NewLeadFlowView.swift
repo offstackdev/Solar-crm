@@ -245,8 +245,8 @@ private struct LeadImageImportView: View {
         title: String,
         message: String,
         systemImage: String,
-        accentColor: Color = .blue,
-        iconBackground: Color = Color.blue.opacity(0.10)
+        accentColor: Color = AppTheme.primary,
+        iconBackground: Color = AppTheme.primary.opacity(0.10)
     ) -> some View {
         AppOutlinedSurface {
             HStack(spacing: 14) {

@@ -271,7 +271,7 @@ private struct AuthTextField: View {
         )
         .overlay {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(isFocused ? Color.accentColor : AppTheme.outline, lineWidth: 1)
+                .stroke(isFocused ? AppTheme.primary : AppTheme.outline, lineWidth: 1)
         }
         .animation(.easeOut(duration: 0.18), value: isFocused)
     }
@@ -306,7 +306,7 @@ private struct AuthSecureField: View {
         )
         .overlay {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(isFocused ? Color.accentColor : AppTheme.outline, lineWidth: 1)
+                .stroke(isFocused ? AppTheme.primary : AppTheme.outline, lineWidth: 1)
         }
         .animation(.easeOut(duration: 0.18), value: isFocused)
     }

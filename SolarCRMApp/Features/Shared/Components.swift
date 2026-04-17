@@ -4,8 +4,8 @@ enum AppTheme {
     static let background = Color(uiColor: .systemGroupedBackground)
     static let onSurface = Color.primary
     static let onSurfaceVariant = Color.secondary
-    static let primary = Color.accentColor
-    static let primaryContainer = Color(uiColor: .systemBlue).opacity(0.12)
+    static let primary = Color(red: 0.0, green: 42.0 / 255.0, blue: 239.0 / 255.0)
+    static let primaryContainer = primary.opacity(0.12)
     static let secondary = Color(uiColor: .secondaryLabel)
     static let secondaryContainer = Color(uiColor: .tertiarySystemGroupedBackground)
     static let surfaceLow = Color(uiColor: .secondarySystemGroupedBackground)
