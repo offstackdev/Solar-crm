@@ -17,9 +17,18 @@ protocol APIClient {
     func send<T: Decodable>(_ request: APIRequest, decodeTo type: T.Type) async throws -> T
 }
 
-enum APIClientError: Error {
+enum APIClientError: LocalizedError {
     case invalidURL
     case invalidResponse
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL:
+            return "The backend URL is invalid."
+        case .invalidResponse:
+            return "The backend request failed. Check your Supabase credentials, auth user, and app_users profile."
+        }
+    }
 }
 
 struct SupabaseAPIClient: APIClient {

@@ -22,6 +22,35 @@ struct LeadFormDraft: Equatable {
     var languagePreference: String = "English"
 
     var isValidForSubmission: Bool {
-        !homeownerFullName.isEmpty && !phoneNumber.isEmpty && !propertyAddress.isEmpty && !city.isEmpty && !state.isEmpty && !zipCode.isEmpty
+        missingRequiredFields.isEmpty
+    }
+
+    var missingRequiredFields: [String] {
+        var fields: [String] = []
+        if homeownerFullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { fields.append("Homeowner Name") }
+        if phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { fields.append("Phone Number") }
+        if propertyAddress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { fields.append("Address") }
+        if city.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { fields.append("City") }
+        if state.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { fields.append("State") }
+        if zipCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { fields.append("Zip") }
+        return fields
+    }
+
+    func cleaned() -> LeadFormDraft {
+        var copy = self
+        copy.homeownerFullName = homeownerFullName.trimmingCharacters(in: .whitespacesAndNewlines)
+        copy.phoneNumber = phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+        copy.email = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        copy.propertyAddress = propertyAddress.trimmingCharacters(in: .whitespacesAndNewlines)
+        copy.city = city.trimmingCharacters(in: .whitespacesAndNewlines)
+        copy.state = state.trimmingCharacters(in: .whitespacesAndNewlines)
+        copy.zipCode = zipCode.trimmingCharacters(in: .whitespacesAndNewlines)
+        copy.utilityCompany = utilityCompany.trimmingCharacters(in: .whitespacesAndNewlines)
+        copy.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        copy.averageElectricBill = averageElectricBill.trimmingCharacters(in: .whitespacesAndNewlines)
+        copy.roofType = roofType.trimmingCharacters(in: .whitespacesAndNewlines)
+        copy.shadingNotes = shadingNotes.trimmingCharacters(in: .whitespacesAndNewlines)
+        copy.languagePreference = languagePreference.trimmingCharacters(in: .whitespacesAndNewlines)
+        return copy
     }
 }

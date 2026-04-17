@@ -1,9 +1,10 @@
 import Foundation
 
 protocol AuthServicing {
-    func login(email: String, role: UserRole?) async throws -> AppUser
+    func login(email: String, password: String?, role: UserRole?) async throws -> AppUser
     func logout() async
     func availableUsers() async -> [AppUser]
+    func restoreSessionUser() async throws -> AppUser?
 }
 
 enum AuthError: Error {
@@ -17,7 +18,8 @@ actor MockAuthService: AuthServicing {
         self.users = users
     }
 
-    func login(email: String, role: UserRole?) async throws -> AppUser {
+    func login(email: String, password: String?, role: UserRole?) async throws -> AppUser {
+        _ = password
         if let role {
             guard let user = users.first(where: { $0.role == role }) else { throw AuthError.userNotFound }
             return user
@@ -33,5 +35,9 @@ actor MockAuthService: AuthServicing {
 
     func availableUsers() async -> [AppUser] {
         users
+    }
+
+    func restoreSessionUser() async throws -> AppUser? {
+        nil
     }
 }

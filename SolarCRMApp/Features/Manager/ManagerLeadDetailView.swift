@@ -17,6 +17,14 @@ struct ManagerLeadDetailView: View {
                     LabeledContent("Closer", value: appState.userName(for: lead.assignedCloserID))
                     LabeledContent("Status", value: lead.currentStatus.rawValue)
                     LabeledContent("Appointment", value: lead.appointmentDateText)
+                    LabeledContent("Source", value: lead.leadSource.rawValue)
+                    LabeledContent("Updated", value: lead.updatedAt.formatted(date: .abbreviated, time: .shortened))
+                }
+
+                Section("Contact") {
+                    LabeledContent("Phone", value: lead.phoneNumber)
+                    LabeledContent("Email", value: lead.email.isEmpty ? "Not provided" : lead.email)
+                    LabeledContent("Utility", value: lead.utilityCompany.isEmpty ? "Not provided" : lead.utilityCompany)
                 }
 
                 Section("Solar Qualifiers") {
@@ -45,5 +53,8 @@ struct ManagerLeadDetailView: View {
             }
         }
         .navigationTitle("Lead Admin")
+        .scrollContentBackground(.hidden)
+        .background(AppTheme.background)
+        .tint(AppTheme.primary)
     }
 }

@@ -15,12 +15,16 @@
 		17A9324BACDA0CB26F331C14 /* LeadStatus+Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 678D683334C035FD1259D7B3 /* LeadStatus+Helpers.swift */; };
 		1E2244806AFE0701E4468F5B /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 968157853DEA687D17F90B0E /* AppState.swift */; };
 		1F10AC8D286E7488378ABB09 /* RoleShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E3E2967059A5064C598C811 /* RoleShellView.swift */; };
+		2409DD5017F95AA22F5A9B16 /* BackendConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E436D58DFA5897051CB22AC /* BackendConfiguration.swift */; };
 		27F275E316ACA0AF29CBC74D /* LeadSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E250538C37A11CD69ABA1C2 /* LeadSource.swift */; };
+		282238AD2A89FE9479DCC79E /* NotificationDTOs.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4FC3BDE70A708A2A971A131 /* NotificationDTOs.swift */; };
 		296972D73AFF3E8F7D08FDC3 /* CloserDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA5FA8E18C5D3D316B26317 /* CloserDashboardView.swift */; };
 		2ACCE4DC4D44464764103C2C /* Lead.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB8E4AB226AE6F0A6D609511 /* Lead.swift */; };
+		43250C66B0A1CE7CA04A3B11 /* SupabaseAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96302A8DFA1A85343962840B /* SupabaseAuthService.swift */; };
 		4852383CB79CEBCF7444C99F /* LeadReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D0D619E24F068F06627F736 /* LeadReviewView.swift */; };
 		4F4891C135AC4C9C7D21E2FA /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12E57C5A09512B053B669C15 /* RootView.swift */; };
 		5E07F27D51C5BE245A09739B /* SeedData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C4C2CCCBF775FD1858601B4 /* SeedData.swift */; };
+		60AF7712E0B0E6553EB92787 /* SupabaseSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E46E78182A31AA3319BAB30 /* SupabaseSession.swift */; };
 		61E51383B10395F1F3FD963F /* DoorKnockerDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847C41DE74AA10F1D3A301AF /* DoorKnockerDashboardView.swift */; };
 		691A778AA61723A434371BD4 /* Formatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2672586CCB1A01DE30A6C16A /* Formatters.swift */; };
 		6A70015CE04F8623DF000B95 /* AssignmentManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A2D7A63403F920C4D937254 /* AssignmentManagerView.swift */; };
@@ -34,14 +38,18 @@
 		8E12EEEAA4D74E1D741C0069 /* AppUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 154585412B1560D6F1075E89 /* AppUser.swift */; };
 		8F5C33224A26F4EBD02642EE /* ManagerDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF4EDF643E315E1C09E871C /* ManagerDashboardView.swift */; };
 		931D0E50874EE3CB9A9AF924 /* NewLeadFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A083CF00BDC4D8DF51BA21EF /* NewLeadFlowView.swift */; };
+		93A95F1AE2415430F429C93D /* AuthDTOs.swift in Sources */ = {isa = PBXBuildFile; fileRef = A60EBA12590432B666D8A883 /* AuthDTOs.swift */; };
 		A7AB119F7EDE3D774566C63A /* SolarCRMApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 537F8430E9EFC3F81357B75E /* SolarCRMApp.swift */; };
 		A9FE7E8025228B72178E9F24 /* LeadHistoryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBD8C557F999C2F345D365FE /* LeadHistoryItem.swift */; };
+		AB1198410C30D3647ACA18AC /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B3D21CBC9A95735EDE0858C1 /* LaunchScreen.storyboard */; };
 		ABE4422B19EE69D9093E89A1 /* CloserLeadDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD936BEB2DEBD75C63C7E2F /* CloserLeadDetailView.swift */; };
 		B04C344A18777E3443A9F5E2 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5FD0E5B52D9ACD550802BF /* Components.swift */; };
 		B48C2986741D4AA1B21C8C1E /* ManagerTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525767BED8DD23C0D302ACF8 /* ManagerTabView.swift */; };
 		B843922DE178F743770D76C8 /* DoorKnockerTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5641597072D94052D9040955 /* DoorKnockerTabView.swift */; };
 		BA322E879A6623D6A93E77B9 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4432A435FE6735B4FFB3302 /* NotificationService.swift */; };
+		C3D2C3E933848DB3D546EC38 /* SupabaseLeadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D0E46135CF5CDE1D94BC081 /* SupabaseLeadService.swift */; };
 		D263C33C0843FA4CC3F6721C /* AIExtractionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8947825B9E973132AEAE0C00 /* AIExtractionService.swift */; };
+		DAE30798A3313B4C5AE94C15 /* SupabaseNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 025D7EDADD1D6E2E63FE39A5 /* SupabaseNotificationService.swift */; };
 		DE29FC75F1EE2270A656CD39 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DD7338EFC4F8AB49A1CD95B /* LoginView.swift */; };
 		E01C173CCF21A4331389A275 /* ManagerPipelineBoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C7B175E634D804B4061AA7 /* ManagerPipelineBoardView.swift */; };
 		E0FDEBAD4BFB4802485BC001 /* UserRole.swift in Sources */ = {isa = PBXBuildFile; fileRef = 296D17C56FA1E3737DFB1E51 /* UserRole.swift */; };
@@ -50,15 +58,19 @@
 		E55CF1E02E94519EB9D27E13 /* AppNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2EE5D76BC829713966E36EB /* AppNotification.swift */; };
 		EEEA727262AEE2EF756F7F63 /* NotificationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92EC43263587D501E93341BB /* NotificationsView.swift */; };
 		F46FD0DDFC7C7AA5F5E04A8C /* LeadDTOs.swift in Sources */ = {isa = PBXBuildFile; fileRef = F74EEB5D126D6819048A9BE8 /* LeadDTOs.swift */; };
+		FC5ECA51135979211BE7B07F /* BackendServiceError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78F9C176D65D3F6736320915 /* BackendServiceError.swift */; };
+		FDFA58D74F674D71D6FC8C2F /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3432A23D2516EFD177EE1B5 /* SessionStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		025D7EDADD1D6E2E63FE39A5 /* SupabaseNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseNotificationService.swift; sourceTree = "<group>"; };
 		073E6DD3E3924F4873AFC1B4 /* LeadOutcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeadOutcome.swift; sourceTree = "<group>"; };
 		094FC9CBEC5B056867CBE28B /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		0E250538C37A11CD69ABA1C2 /* LeadSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeadSource.swift; sourceTree = "<group>"; };
 		12E57C5A09512B053B669C15 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		154585412B1560D6F1075E89 /* AppUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUser.swift; sourceTree = "<group>"; };
 		198A6A064C42EA8C7B4897D3 /* CloserTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloserTabView.swift; sourceTree = "<group>"; };
+		1D0E46135CF5CDE1D94BC081 /* SupabaseLeadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseLeadService.swift; sourceTree = "<group>"; };
 		2672586CCB1A01DE30A6C16A /* Formatters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatters.swift; sourceTree = "<group>"; };
 		296D17C56FA1E3737DFB1E51 /* UserRole.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRole.swift; sourceTree = "<group>"; };
 		2D2F5133BE1FD2CF2EB1F10D /* DoorKnockerLeadDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoorKnockerLeadDetailView.swift; sourceTree = "<group>"; };
@@ -67,26 +79,33 @@
 		3EC0CFE335C1178DF3E5BFA4 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		41648CBD61EAB8CE10FD14AD /* ManagerLeadDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagerLeadDetailView.swift; sourceTree = "<group>"; };
 		4A2D7A63403F920C4D937254 /* AssignmentManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssignmentManagerView.swift; sourceTree = "<group>"; };
+		4E436D58DFA5897051CB22AC /* BackendConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendConfiguration.swift; sourceTree = "<group>"; };
 		525767BED8DD23C0D302ACF8 /* ManagerTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagerTabView.swift; sourceTree = "<group>"; };
 		537F8430E9EFC3F81357B75E /* SolarCRMApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolarCRMApp.swift; sourceTree = "<group>"; };
 		55C7B175E634D804B4061AA7 /* ManagerPipelineBoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagerPipelineBoardView.swift; sourceTree = "<group>"; };
 		5641597072D94052D9040955 /* DoorKnockerTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoorKnockerTabView.swift; sourceTree = "<group>"; };
 		5D0D619E24F068F06627F736 /* LeadReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeadReviewView.swift; sourceTree = "<group>"; };
 		5E3E2967059A5064C598C811 /* RoleShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoleShellView.swift; sourceTree = "<group>"; };
-		63EFABB7ED6D0965C732BA96 /* SolarCRM.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SolarCRM.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		63EFABB7ED6D0965C732BA96 /* SolarCRM.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SolarCRM.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		678D683334C035FD1259D7B3 /* LeadStatus+Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LeadStatus+Helpers.swift"; sourceTree = "<group>"; };
 		6C3B835054B83EBCEBDB86BE /* LeadFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeadFormView.swift; sourceTree = "<group>"; };
+		6E46E78182A31AA3319BAB30 /* SupabaseSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseSession.swift; sourceTree = "<group>"; };
+		78F9C176D65D3F6736320915 /* BackendServiceError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendServiceError.swift; sourceTree = "<group>"; };
 		81D3EA31BE0B1A4E96C7C214 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		81DF46E63105AAEA1EA2A675 /* LeadFormDraft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeadFormDraft.swift; sourceTree = "<group>"; };
 		847C41DE74AA10F1D3A301AF /* DoorKnockerDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoorKnockerDashboardView.swift; sourceTree = "<group>"; };
 		8947825B9E973132AEAE0C00 /* AIExtractionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIExtractionService.swift; sourceTree = "<group>"; };
 		8F29D6885EFEAF56F8E2ED19 /* LeadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeadService.swift; sourceTree = "<group>"; };
 		92EC43263587D501E93341BB /* NotificationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsView.swift; sourceTree = "<group>"; };
+		96302A8DFA1A85343962840B /* SupabaseAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseAuthService.swift; sourceTree = "<group>"; };
 		968157853DEA687D17F90B0E /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		9DD7338EFC4F8AB49A1CD95B /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		9FA5FA8E18C5D3D316B26317 /* CloserDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloserDashboardView.swift; sourceTree = "<group>"; };
 		A083CF00BDC4D8DF51BA21EF /* NewLeadFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewLeadFlowView.swift; sourceTree = "<group>"; };
+		A60EBA12590432B666D8A883 /* AuthDTOs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthDTOs.swift; sourceTree = "<group>"; };
 		AE7B75FD8EEE8F57B25F7A42 /* LeadStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeadStatus.swift; sourceTree = "<group>"; };
+		B3D21CBC9A95735EDE0858C1 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		B4FC3BDE70A708A2A971A131 /* NotificationDTOs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationDTOs.swift; sourceTree = "<group>"; };
 		BAD936BEB2DEBD75C63C7E2F /* CloserLeadDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloserLeadDetailView.swift; sourceTree = "<group>"; };
 		C2EE5D76BC829713966E36EB /* AppNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNotification.swift; sourceTree = "<group>"; };
 		CA5FD0E5B52D9ACD550802BF /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
@@ -94,6 +113,7 @@
 		D4432A435FE6735B4FFB3302 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		DB8E4AB226AE6F0A6D609511 /* Lead.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lead.swift; sourceTree = "<group>"; };
 		DBD8C557F999C2F345D365FE /* LeadHistoryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeadHistoryItem.swift; sourceTree = "<group>"; };
+		E3432A23D2516EFD177EE1B5 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
 		EC5A689ACCE35EB4371DADF7 /* LeadExtraction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeadExtraction.swift; sourceTree = "<group>"; };
 		F74EEB5D126D6819048A9BE8 /* LeadDTOs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeadDTOs.swift; sourceTree = "<group>"; };
 		FFF4EDF643E315E1C09E871C /* ManagerDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagerDashboardView.swift; sourceTree = "<group>"; };
@@ -106,6 +126,7 @@
 				5573A3606A872105B44A7A6D /* App */,
 				457FDA5A4B2540BD30DF841E /* Core */,
 				E5383B1D66406E1D5B382C7B /* Features */,
+				9075194395587531070BA6B1 /* Resources */,
 			);
 			path = SolarCRMApp;
 			sourceTree = "<group>";
@@ -122,9 +143,18 @@
 				073E6DD3E3924F4873AFC1B4 /* LeadOutcome.swift */,
 				0E250538C37A11CD69ABA1C2 /* LeadSource.swift */,
 				AE7B75FD8EEE8F57B25F7A42 /* LeadStatus.swift */,
+				6E46E78182A31AA3319BAB30 /* SupabaseSession.swift */,
 				296D17C56FA1E3737DFB1E51 /* UserRole.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		3084C508BFD293C45002162C /* Configuration */ = {
+			isa = PBXGroup;
+			children = (
+				4E436D58DFA5897051CB22AC /* BackendConfiguration.swift */,
+			);
+			path = Configuration;
 			sourceTree = "<group>";
 		};
 		3F033716F27A6DCB69FE9400 /* Auth */ = {
@@ -151,6 +181,7 @@
 			isa = PBXGroup;
 			children = (
 				968157853DEA687D17F90B0E /* AppState.swift */,
+				3084C508BFD293C45002162C /* Configuration */,
 				2AD3EAD61CE4C834EE27E415 /* Models */,
 				B79538EE9EDC6C099D4C13B2 /* Networking */,
 				E9150B91F968BF1E7079E5BB /* Services */,
@@ -199,6 +230,14 @@
 			path = Utilities;
 			sourceTree = "<group>";
 		};
+		9075194395587531070BA6B1 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				B3D21CBC9A95735EDE0858C1 /* LaunchScreen.storyboard */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		AD8B3033696DE8D6B0BA8BAE /* DoorKnocker */ = {
 			isa = PBXGroup;
 			children = (
@@ -216,7 +255,9 @@
 			isa = PBXGroup;
 			children = (
 				3EC0CFE335C1178DF3E5BFA4 /* APIClient.swift */,
+				A60EBA12590432B666D8A883 /* AuthDTOs.swift */,
 				F74EEB5D126D6819048A9BE8 /* LeadDTOs.swift */,
+				B4FC3BDE70A708A2A971A131 /* NotificationDTOs.swift */,
 			);
 			path = Networking;
 			sourceTree = "<group>";
@@ -254,10 +295,15 @@
 			children = (
 				8947825B9E973132AEAE0C00 /* AIExtractionService.swift */,
 				094FC9CBEC5B056867CBE28B /* AuthService.swift */,
+				78F9C176D65D3F6736320915 /* BackendServiceError.swift */,
 				8F29D6885EFEAF56F8E2ED19 /* LeadService.swift */,
 				D4432A435FE6735B4FFB3302 /* NotificationService.swift */,
 				3C4C2CCCBF775FD1858601B4 /* SeedData.swift */,
 				2E18237EC35D5E737F31E858 /* ServiceContainer.swift */,
+				E3432A23D2516EFD177EE1B5 /* SessionStore.swift */,
+				96302A8DFA1A85343962840B /* SupabaseAuthService.swift */,
+				1D0E46135CF5CDE1D94BC081 /* SupabaseLeadService.swift */,
+				025D7EDADD1D6E2E63FE39A5 /* SupabaseNotificationService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -270,6 +316,7 @@
 			buildConfigurationList = 0FDF1349CA5FA0839BFE2AF6 /* Build configuration list for PBXNativeTarget "SolarCRM" */;
 			buildPhases = (
 				6ACA42D2FF95EF0801249F13 /* Sources */,
+				C4EB5B0798F2220098D57A42 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -290,8 +337,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
-				TargetAttributes = {
-				};
 			};
 			buildConfigurationList = 3047F749EC45F5FAD7A34E41 /* Build configuration list for PBXProject "SolarCRM" */;
 			developmentRegion = en;
@@ -312,6 +357,17 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		C4EB5B0798F2220098D57A42 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AB1198410C30D3647ACA18AC /* LaunchScreen.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		6ACA42D2FF95EF0801249F13 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -323,7 +379,10 @@
 				1E2244806AFE0701E4468F5B /* AppState.swift in Sources */,
 				8E12EEEAA4D74E1D741C0069 /* AppUser.swift in Sources */,
 				6A70015CE04F8623DF000B95 /* AssignmentManagerView.swift in Sources */,
+				93A95F1AE2415430F429C93D /* AuthDTOs.swift in Sources */,
 				E4E76695115D3B2C4DBD1260 /* AuthService.swift in Sources */,
+				2409DD5017F95AA22F5A9B16 /* BackendConfiguration.swift in Sources */,
+				FC5ECA51135979211BE7B07F /* BackendServiceError.swift in Sources */,
 				296972D73AFF3E8F7D08FDC3 /* CloserDashboardView.swift in Sources */,
 				ABE4422B19EE69D9093E89A1 /* CloserLeadDetailView.swift in Sources */,
 				7DED6454DA5EE7498B6D752B /* CloserScheduleView.swift in Sources */,
@@ -351,6 +410,7 @@
 				E01C173CCF21A4331389A275 /* ManagerPipelineBoardView.swift in Sources */,
 				B48C2986741D4AA1B21C8C1E /* ManagerTabView.swift in Sources */,
 				931D0E50874EE3CB9A9AF924 /* NewLeadFlowView.swift in Sources */,
+				282238AD2A89FE9479DCC79E /* NotificationDTOs.swift in Sources */,
 				BA322E879A6623D6A93E77B9 /* NotificationService.swift in Sources */,
 				EEEA727262AEE2EF756F7F63 /* NotificationsView.swift in Sources */,
 				0D981E919FBD7BE235C8EF69 /* ProfileView.swift in Sources */,
@@ -358,7 +418,12 @@
 				4F4891C135AC4C9C7D21E2FA /* RootView.swift in Sources */,
 				5E07F27D51C5BE245A09739B /* SeedData.swift in Sources */,
 				8328D4882FF67D07B6CED7E8 /* ServiceContainer.swift in Sources */,
+				FDFA58D74F674D71D6FC8C2F /* SessionStore.swift in Sources */,
 				A7AB119F7EDE3D774566C63A /* SolarCRMApp.swift in Sources */,
+				43250C66B0A1CE7CA04A3B11 /* SupabaseAuthService.swift in Sources */,
+				C3D2C3E933848DB3D546EC38 /* SupabaseLeadService.swift in Sources */,
+				DAE30798A3313B4C5AE94C15 /* SupabaseNotificationService.swift in Sources */,
+				60AF7712E0B0E6553EB92787 /* SupabaseSession.swift in Sources */,
 				E0FDEBAD4BFB4802485BC001 /* UserRole.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -436,15 +501,21 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = DR43J3MG2Z;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Solar CRM";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Solar CRM uses the camera so door knockers can capture field notes and import them into a new lead.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Solar CRM uses your photo library so door knockers can attach note images to a new lead.";
+				INFOPLIST_KEY_SUPABASE_ANON_KEY = sb_publishable_Ll0KgDCocYINI9dG3K0inQ_KN2KnBIH;
+				INFOPLIST_KEY_SUPABASE_URL = https://ferxbvydjnitpoyizgjd.supabase.co;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -453,15 +524,21 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = DR43J3MG2Z;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Solar CRM";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Solar CRM uses the camera so door knockers can capture field notes and import them into a new lead.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Solar CRM uses your photo library so door knockers can attach note images to a new lead.";
+				INFOPLIST_KEY_SUPABASE_ANON_KEY = sb_publishable_Ll0KgDCocYINI9dG3K0inQ_KN2KnBIH;
+				INFOPLIST_KEY_SUPABASE_URL = https://ferxbvydjnitpoyizgjd.supabase.co;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};

@@ -2,10 +2,19 @@ import SwiftUI
 
 struct DoorKnockerLeadDetailView: View {
     @EnvironmentObject private var appState: AppState
+
     let leadID: UUID
+
+    @State private var appointmentDraft = Date().addingTimeInterval(86_400)
+    @State private var isSavingAppointment = false
+    @State private var appointmentSaveError: String?
 
     private var lead: Lead? {
         appState.leads.first(where: { $0.id == leadID })
+    }
+
+    private var hasAppointmentTime: Bool {
+        lead?.appointmentDate != nil
     }
 
     var body: some View {
@@ -26,34 +35,35 @@ struct DoorKnockerLeadDetailView: View {
 
                 Section("Actions") {
                     if lead.currentStatus.isVisibleOnDoorKnockerActiveBoard {
-                        Button("Appointment Confirmed") {
-                            Task {
-                                await appState.updateLeadStatus(
-                                    leadID: leadID,
-                                    status: .appointmentConfirmed,
-                                    note: "Door knocker confirmed the appointment with prospect"
-                                )
+                        DatePicker("Appointment Time", selection: $appointmentDraft, in: Date()..., displayedComponents: [.date, .hourAndMinute])
+
+                        Button(action: saveAppointmentTime) {
+                            HStack {
+                                if isSavingAppointment {
+                                    ProgressView()
+                                }
+                                Text(hasAppointmentTime ? "Update Appointment Time" : "Save Appointment Time")
                             }
                         }
 
-                        Button("Appointment Canceled") {
-                            Task {
-                                await appState.updateLeadStatus(
-                                    leadID: leadID,
-                                    status: .appointmentCanceled,
-                                    note: "Door knocker canceled appointment after homeowner update"
-                                )
-                            }
+                        if hasAppointmentTime {
+                            Button("Appointment Confirmed", action: confirmAppointment)
                         }
 
-                        Button("Appointment Rescheduled") {
-                            Task {
-                                await appState.updateLeadStatus(
-                                    leadID: leadID,
-                                    status: .appointmentRescheduled,
-                                    note: "Door knocker rescheduled appointment"
-                                )
-                            }
+                        if let appointmentSaveError {
+                            Text(appointmentSaveError)
+                                .font(.footnote)
+                                .foregroundStyle(.red)
+                        }
+
+                        Button("Appointment Canceled", action: cancelAppointment)
+
+                        if hasAppointmentTime {
+                            Button("Appointment Rescheduled", action: rescheduleAppointment)
+                        } else {
+                            Text("Add an appointment time before this lead can be handed off to the closer.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
                         }
                     } else {
                         Text("This lead has been handed off. You can monitor updates here, but closer workflow controls are locked.")
@@ -85,5 +95,49 @@ struct DoorKnockerLeadDetailView: View {
             }
         }
         .navigationTitle("Lead Detail")
+        .scrollContentBackground(.hidden)
+        .background(AppTheme.background)
+        .tint(AppTheme.primary)
+        .task(id: lead?.appointmentDate) {
+            appointmentDraft = lead?.appointmentDate ?? Date().addingTimeInterval(86_400)
+        }
+    }
+
+    private func saveAppointmentTime() {
+        Task {
+            isSavingAppointment = true
+            appointmentSaveError = nil
+            defer { isSavingAppointment = false }
+
+            let saved = await appState.updateLeadAppointment(
+                leadID: leadID,
+                appointmentDate: appointmentDraft
+            )
+            if !saved {
+                appointmentSaveError = "Appointment time could not be saved. Try again."
+            }
+        }
+    }
+
+    private func confirmAppointment() {
+        updateStatus(.appointmentConfirmed, note: "Door knocker confirmed the appointment with prospect")
+    }
+
+    private func cancelAppointment() {
+        updateStatus(.appointmentCanceled, note: "Door knocker canceled appointment after homeowner update")
+    }
+
+    private func rescheduleAppointment() {
+        updateStatus(.appointmentRescheduled, note: "Door knocker rescheduled appointment")
+    }
+
+    private func updateStatus(_ status: LeadStatus, note: String) {
+        Task {
+            await appState.updateLeadStatus(
+                leadID: leadID,
+                status: status,
+                note: note
+            )
+        }
     }
 }

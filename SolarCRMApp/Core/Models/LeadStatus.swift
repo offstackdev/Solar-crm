@@ -19,6 +19,10 @@ enum LeadStatus: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    init(backendValue: String) {
+        self = LeadStatus(rawValue: backendValue) ?? .submitted
+    }
+
     var isVisibleOnDoorKnockerActiveBoard: Bool {
         switch self {
         case .newLead, .needsVerification, .submitted, .pendingConfirmation, .appointmentCanceled, .appointmentRescheduled:
@@ -30,6 +34,33 @@ enum LeadStatus: String, Codable, CaseIterable, Identifiable {
 
     var isConfirmedForCloserSchedule: Bool {
         self == .appointmentConfirmed || self == .sentToCloser || self == .onCloserSchedule || self == .appointmentRun
+    }
+
+    var isVisibleToCloser: Bool {
+        switch self {
+        case .submitted, .pendingConfirmation, .appointmentRescheduled, .sentToCloser, .onCloserSchedule, .appointmentRun, .closed, .oneLegger, .needsFollowUp, .noShow, .notInterested:
+            return true
+        case .newLead, .needsVerification, .appointmentConfirmed, .appointmentCanceled:
+            return false
+        }
+    }
+
+    var isVisibleInCloserLeads: Bool {
+        switch self {
+        case .submitted, .pendingConfirmation, .appointmentRescheduled, .sentToCloser:
+            return true
+        case .newLead, .needsVerification, .appointmentConfirmed, .appointmentCanceled, .onCloserSchedule, .appointmentRun, .closed, .oneLegger, .needsFollowUp, .noShow, .notInterested:
+            return false
+        }
+    }
+
+    var isCompletedCloserOutcome: Bool {
+        switch self {
+        case .closed, .oneLegger, .needsFollowUp, .noShow, .notInterested:
+            return true
+        case .newLead, .needsVerification, .submitted, .pendingConfirmation, .appointmentConfirmed, .appointmentCanceled, .appointmentRescheduled, .sentToCloser, .onCloserSchedule, .appointmentRun:
+            return false
+        }
     }
 
     var badgeTone: StatusTone {

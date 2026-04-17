@@ -1,27 +1,40 @@
 import SwiftUI
 
 struct LeadFormView: View {
+    @Environment(\.dismiss) private var dismiss
+
     let title: String
     @Binding var draft: LeadFormDraft
     let source: LeadSource
     let showReviewContext: Bool
-    let onSubmit: () async -> Void
+    let assignedCloserName: String?
+    let onSubmit: () async -> Bool
 
     @State private var isSubmitting = false
+    @State private var saveError: String?
 
     var body: some View {
         Form {
+            if let assignedCloserName {
+                Section {
+                    LabeledContent("Assigned Closer", value: assignedCloserName)
+                    Text("This lead stays with you until the appointment is confirmed, then it moves to the closer's queue automatically.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             if showReviewContext {
                 Section("Review Required") {
-                    Text("AI-filled values can be edited before the lead is saved.")
+                    Text("Review and edit the extracted values before saving the lead.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
             }
 
             Section("Prospect") {
-                TextField("Homeowner Full Name", text: $draft.homeownerFullName)
-                TextField("Phone Number", text: $draft.phoneNumber)
+                TextField("Homeowner Full Name *", text: $draft.homeownerFullName)
+                TextField("Phone Number *", text: $draft.phoneNumber)
                     .keyboardType(.phonePad)
                 TextField("Email", text: $draft.email)
                     .keyboardType(.emailAddress)
@@ -37,10 +50,10 @@ struct LeadFormView: View {
             }
 
             Section("Property") {
-                TextField("Address", text: $draft.propertyAddress)
-                TextField("City", text: $draft.city)
-                TextField("State", text: $draft.state)
-                TextField("Zip", text: $draft.zipCode)
+                TextField("Address *", text: $draft.propertyAddress)
+                TextField("City *", text: $draft.city)
+                TextField("State *", text: $draft.state)
+                TextField("Zip *", text: $draft.zipCode)
                     .keyboardType(.numberPad)
                 TextField("Utility Company", text: $draft.utilityCompany)
                 TextField("Average Electric Bill", text: $draft.averageElectricBill)
@@ -69,12 +82,30 @@ struct LeadFormView: View {
                     .lineLimit(4, reservesSpace: true)
             }
 
+            if let saveError {
+                Section {
+                    Text(saveError)
+                        .foregroundStyle(.red)
+                }
+            }
+
             Section {
                 Button {
                     Task {
+                        guard draft.isValidForSubmission else {
+                            saveError = "Complete the required fields before saving: \(draft.missingRequiredFields.joined(separator: ", "))."
+                            return
+                        }
+
                         isSubmitting = true
+                        saveError = nil
                         defer { isSubmitting = false }
-                        await onSubmit()
+                        let saved = await onSubmit()
+                        if saved {
+                            dismiss()
+                        } else {
+                            saveError = "Lead could not be saved. Try again."
+                        }
                     }
                 } label: {
                     HStack {
@@ -84,7 +115,7 @@ struct LeadFormView: View {
                     }
                     .frame(maxWidth: .infinity)
                 }
-                .disabled(!draft.isValidForSubmission || isSubmitting)
+                .disabled(isSubmitting)
             }
         }
         .navigationTitle(title)
